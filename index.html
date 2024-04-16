@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <!-- Boxicons CSS -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    
+    <title>Project 3D Simulation</title>
+</head>
+<body>
+    <div class="btn">
+        <span class="fas fa-bars"></span>
+    </div>
+
+    <nav class="sidebar">
+        <div class="head">
+            <div class="image-text">
+                <span class="'image">
+                    <img src="logo.png" alt="logo">
+                </span>
+            </div>
+
+            <div class="details">
+                <p class="name">3D Simulation</p>
+            </div>
+        </div>
+        <ul>
+                <li>
+                    <a href="#" class="feat-btn">Geometry
+                        <span class="fas fa-caret-down first"></span>
+                    </a>
+                    <ul class="feat-show">
+                        <li><a href="#" >Box</a></li>
+                        <li><a href="#" >Sphere</a></li>
+                        <li><a href="#" >Cone</a></li>
+                        <li><a href="#" >Cylinder</a></li>
+                        <li><a href="#" >Torus</a></li>
+                        <li><a href="#" >Teapot</a></li>
+                        <li><a href="#" >Gumball</a></li>
+                        <li><a href="#" >Torus Knot</a></li>
+                       
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="serv-btn">Surface
+                        <span class="fas fa-caret-down second"><span>
+                    </a>
+                    <ul class="serv-show">
+                        <li><a href="#" >Point</a></li>
+                        <li><a href="#" >Line</a></li>
+                        <li><a href="#" >Solid</a></li>
+                        <li>
+                            <input type="file" accept="image/*" id="texture" style="display: none;"
+                                />
+                            <a href="#" name="button" onclick="Uploadimage();">Texture</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#" class="light-btn">Light
+                        <span class="fas fa-caret-down third"></span>
+                    </a>
+                    <ul class="light-show">
+                        <li><a href="#" >Point light</a></li>
+                        <li><a href="#" >Ambient Light</a></li>
+                        <li><a href="#" >Spot Light</a></li>
+                        <li><a href="#" >Remove Light</a></li>
+                    </ul>
+                </li>
+                <li> 
+                    <a href="#" class="animation-btn">Animation
+                        <span class="fas fa-caret-down four"></span>
+                    </a>
+                    <ul class="animation-show">
+                        <li ><a href="#">Rotate & move </a></li>
+                        
+                        <li><a href="#">Up & down</a></li>
+                        <li class="subitem"><a href="#">Reset</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <button style="margin:10px; margin-right:18px; margin-left:40px; background-color:#695cfe; 
+                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
+                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" >
+
+                        <i class='fas fa-arrows-alt'></i>
+                    </button>
+
+                    <button style="margin:10px; margin-right:18px; margin-left:16px; background-color:#695cfe; 
+                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
+                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" >
+
+                        <i class='fas fa-sync-alt'></i>
+                    </button>
+
+                    <button style="margin:10px; margin-right:0px; margin-left:16px; background-color:#695cfe; 
+                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
+                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" >
+
+                        <i class='fas fa-expand-arrows-alt'></i>
+                    </button>
+                </li>
+                <li> 
+                    <a href="#" class="camera-btn">Camera
+                        <span class="fas fa-caret-down five"></span>
+                    </a>
+                    <ul class="camera-show">
+                        <li>
+                            <div class="card-item">
+                                <span class="valueSpanFOV">Field of view: 75</span>
+                                <input type="range" class="custom-range" id="customFOV" min="0" max="180" value="75">
+                            </div>
+                            <div class="card-item">
+                                <span class="valueSpanNear">Near: 0.1</span>
+                                <input type="range" class="custom-range" id="customNear" min="0.1" max="100" value="0.1">
+                            </div>
+                            <div class="card-item">
+                                <span class="valueSpanFar">Far: 1000</span>
+                                <input type="range" class="custom-range" id="customFar" min="200" max="2000" value="1000">
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+
+        </ul>   
+    </nav>
+    <div id="webgl"></div>
+    <script>
+        $(document).ready(function() {
+            const $valueSpanFOV = $('.valueSpanFOV');
+            const $valueSpanNear = $('.valueSpanNear');
+            const $valueSpanFar = $('.valueSpanFar');
+
+            const $valueFOV = $('#customFOV');
+            const $valueNear = $('#customNear');
+            const $valueFar = $('#customFar');
+
+            $valueSpanFOV.html("Field of view: " + $valueFOV.val());
+            $valueFOV.on('input change', () => {
+                $valueSpanFOV.html("Field of view: " + $valueFOV.val());
+                setFOV($valueFOV.val());
+            });
+
+            $valueSpanNear.html("Near: " + $valueNear.val());
+            $valueNear.on('input change', () => {
+                $valueSpanNear.html("Near: " + $valueNear.val());
+                setNear($valueNear.val());
+            });
+
+            $valueSpanFar.html("Far: " + $valueFar.val());
+            $valueFar.on('input change', () => {
+                $valueSpanFar.html("Far: " + $valueFar.val());
+                setFar($valueFar.val());
+            });
+        });
+
+        function Uploadimage() {
+            document.getElementById("texture").click();
+        };
+
+        
+        $('.btn').click(function () {
+            $(this).toggleClass("click");
+            $('.sidebar').toggleClass("show");
+        });
+        $('.feat-btn').click(function () {
+            $('nav ul .feat-show').toggleClass("show");
+            $('nav ul .first').toggleClass("rotate");
+        });
+        $('.serv-btn').click(function () {
+            $('nav ul .serv-show').toggleClass("show1");
+            $('nav ul .second').toggleClass("rotate");
+        });
+        $('.light-btn').click(function () {
+            $('nav ul .light-show').toggleClass("show2");
+            $('nav ul .third').toggleClass("rotate");
+        });
+        $('.animation-btn').click(function () {
+            $('nav ul .animation-show').toggleClass("show3");
+            $('nav ul .four').toggleClass("rotate");
+        });
+        $('.camera-btn').click(function () {
+            $('nav ul .camera-show').toggleClass("show4");
+            $('nav ul .five').toggleClass("rotate");
+        });
+        $('nav ul li').click(function () {
+            $(this).addClass("active").siblings().removeClass("active");});
+
+    </script>
+</body>
+</html>
