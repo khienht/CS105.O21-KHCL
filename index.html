@@ -37,14 +37,13 @@
                         <span class="fas fa-caret-down first"></span>
                     </a>
                     <ul class="feat-show">
-                        <li><a href="#" >Box</a></li>
-                        <li><a href="#" >Sphere</a></li>
-                        <li><a href="#" >Cone</a></li>
-                        <li><a href="#" >Cylinder</a></li>
-                        <li><a href="#" >Torus</a></li>
-                        <li><a href="#" >Teapot</a></li>
-                        <li><a href="#" >Gumball</a></li>
-                        <li><a href="#" >Torus Knot</a></li>
+                        <li><a href="#" onclick="addMesh(1);">Box</a></li>
+                        <li><a href="#" onclick="addMesh(2);">Sphere</a></li>
+                        <li><a href="#" onclick="addMesh(3);">Cone</a></li>
+                        <li><a href="#" onclick="addMesh(4);">Cylinder</a></li>
+                        <li><a href="#" onclick="addMesh(5);">Torus</a></li>
+                        <!-- <li><a href="#" onclick="addMesh(6);">Teapot</a></li> -->
+                        <li><a href="#" onclick="addMesh(7);">Heart</a></li>
                        
                     </ul>
                 </li>
@@ -193,7 +192,8 @@
         });
         $('nav ul li').click(function () {
             $(this).addClass("active").siblings().removeClass("active");});
-
     </script>
+    
 </body>
+<script type="module" src="./main.js"></script>
 </html>
