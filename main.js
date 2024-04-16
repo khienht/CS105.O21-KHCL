@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js'
-// import { TeapotBufferGeometry } from './lib/TeapotBufferGeometry.js';
+import * as THREE from './lib/three.module.js';
+import { TeapotGeometry } from "three/addons/geometries/TeapotGeometry.js";
 
 var scene, camera, renderer, mesh;
 
@@ -9,7 +9,7 @@ var ShereG = new THREE.SphereGeometry(20,20,20);
 var ConeG = new THREE.ConeGeometry(18,30,32,20);
 var CylinderG = new THREE.CylinderGeometry(20,20,40,30,5);
 var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
-// var TeapotG = new TeapotBufferGeometry(20, 8);
+var teapotGeo = new TeapotGeometry(20);
 
 var material = new THREE.MeshBasicMaterial({color: '#ffffff'});
 material.needsUpdate = true;
@@ -68,7 +68,8 @@ function addMesh(id){
             mesh = new THREE.Mesh(TorusG,material);
             break;
         case 6:
-            // mesh = new THREE.Mesh(TeapotG, material);
+            // const geometry = new THREE.TeapotBufferGeometry();
+            mesh = new THREE.Mesh(teapotGeo,material);
             break;
         case 7:{
             const extrudeSettings = { 
