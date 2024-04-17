@@ -1,5 +1,7 @@
 import * as THREE from './lib/three.module.js';
 import { TeapotGeometry } from "three/addons/geometries/TeapotGeometry.js";
+import { GUI } from "./lib/dat.gui.module.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 var scene, camera, renderer, mesh;
 
@@ -25,25 +27,41 @@ function init(){
     camera = new THREE.PerspectiveCamera(75,
                                 window.innerWidth/innerHeight,0.1,1000);
     camera.position.set(camera_x,camera_y,camera_z);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    camera.lookAt(scene.position);
     
     // Grid
     var size = 300;
     var divisions = 50;
     var gridHelper = new THREE.GridHelper(size,divisions, 0x888888);
     scene.add(gridHelper);
-    
+
     renderer = new THREE.WebGLRenderer();
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('webgl').appendChild(renderer.domElement);
+
+    // Controls
+    var controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Resize handler
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.addEventListener('resize', onWindowResize, false);
+    controls.update();
     render();
+    
 }
 
 function render(){
-    renderer.render(scene,camera);
+    requestAnimationFrame(render);
+    
+    renderer.render(scene, camera);
 }
 
 //vẽ hình
@@ -108,3 +126,5 @@ function getHeart() {
 
     return heartShape;
 }
+
+
