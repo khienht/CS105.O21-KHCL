@@ -14,7 +14,7 @@
     
     <title>Project 3D Simulation</title>
 </head>
-<body>
+<body class="dark">
     <div class="btn">
         <span class="fas fa-bars"></span>
     </div>
@@ -32,102 +32,109 @@
             </div>
         </div>
         <ul>
-                <li>
-                    <a href="#" class="feat-btn">Geometry
-                        <span class="fas fa-caret-down first"></span>
-                    </a>
-                    <ul class="feat-show">
-                        <li><a href="#" onclick="addMesh(1);">Box</a></li>
-                        <li><a href="#" onclick="addMesh(2);">Sphere</a></li>
-                        <li><a href="#" onclick="addMesh(3);">Cone</a></li>
-                        <li><a href="#" onclick="addMesh(4);">Cylinder</a></li>
-                        <li><a href="#" onclick="addMesh(5);">Torus</a></li>
-                        <li><a href="#" onclick="addMesh(6);">Teapot</a></li>
-                        <li><a href="#" onclick="addMesh(7);">Heart</a></li>
-                       
-                    </ul>
-                </li>
-                <li>
-                    <a href="#" class="serv-btn">Surface
-                        <span class="fas fa-caret-down second"><span>
-                    </a>
-                    <ul class="serv-show">
-                        <li><a href="#" onclick="SetSurface(1);">Point</a></li>
-                        <li><a href="#" onclick="SetSurface(2);">Line</a></li>
-                        <li><a href="#" onclick="SetSurface(3);">Solid</a></li>
-                        <li>
-                            <input type="file" accept="image/*" id="texture" style="display: none;"
-                            onchange="ImgTexture(window.URL.createObjectURL(this.files[0]))" />
-                            <a href="#" name="button" onclick="Uploadimage();">Texture</a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#" class="light-btn">Light
-                        <span class="fas fa-caret-down third"></span>
-                    </a>
-                    <ul class="light-show">
-                        <li><a href="#" >Point light</a></li>
-                        <li><a href="#" >Ambient Light</a></li>
-                        <li><a href="#" >Spot Light</a></li>
-                        <li><a href="#" >Remove Light</a></li>
-                    </ul>
-                </li>
-                <li> 
-                    <a href="#" class="animation-btn">Animation
-                        <span class="fas fa-caret-down four"></span>
-                    </a>
-                    <ul class="animation-show">
-                        <li ><a href="#">Rotate & move </a></li>
-                        
-                        <li><a href="#">Up & down</a></li>
-                        <li class="subitem"><a href="#">Reset</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <button style="margin:10px; margin-right:18px; margin-left:40px; background-color:#695cfe; 
-                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Translate()" >
+            <li>
+                <a href="#" class="feat-btn">Geometry
+                    <span class="fas fa-caret-down first"></span>
+                </a>
+                <ul class="feat-show">
+                    <li><a href="#" onclick="addMesh(1);">Box</a></li>
+                    <li><a href="#" onclick="addMesh(2);">Sphere</a></li>
+                    <li><a href="#" onclick="addMesh(3);">Cone</a></li>
+                    <li><a href="#" onclick="addMesh(4);">Cylinder</a></li>
+                    <li><a href="#" onclick="addMesh(5);">Torus</a></li>
+                    <li><a href="#" onclick="addMesh(6);">Teapot</a></li>
+                    <li><a href="#" onclick="addMesh(7);">Heart</a></li>
+                    
+                </ul>
+            </li>
+            <li>
+                <a href="#" class="serv-btn">Surface
+                    <span class="fas fa-caret-down second"><span>
+                </a>
+                <ul class="serv-show">
+                    <li><a href="#" onclick="SetSurface(1);">Point</a></li>
+                    <li><a href="#" onclick="SetSurface(2);">Line</a></li>
+                    <li><a href="#" onclick="SetSurface(3);">Solid</a></li>
+                    <li>
+                        <input type="file" accept="image/*" id="texture" style="display: none;"
+                        onchange="ImgTexture(window.URL.createObjectURL(this.files[0]))" />
+                        <a href="#" name="button" onclick="Uploadimage();">Texture</a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" class="light-btn">Light
+                    <span class="fas fa-caret-down third"></span>
+                </a>
+                <ul class="light-show">
+                    <li><a href="#" >Point light</a></li>
+                    <li><a href="#" >Ambient Light</a></li>
+                    <li><a href="#" >Spot Light</a></li>
+                    <li><a href="#" >Remove Light</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="#" class="animation-btn">Animation
+                    <span class="fas fa-caret-down four"></span>
+                </a>
+                <ul class="animation-show">
+                    <li ><a href="#">Rotate & move </a></li>
+                    
+                    <li><a href="#">Up & down</a></li>
+                    <li class="subitem"><a href="#">Reset</a></li>
+                </ul>
+            </li>
+            <li>
+                <button style="margin:10px; margin-right:18px; margin-left:30px; background-color:#695cfe; 
+                font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
+                onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Translate()" >
 
-                        <i class='fas fa-arrows-alt'></i>
-                    </button>
+                    <i class='fas fa-arrows-alt'></i>
+                </button>
 
-                    <button style="margin:10px; margin-right:18px; margin-left:16px; background-color:#695cfe; 
-                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Rotate()">
+                <button style="margin:10px; margin-right:18px; margin-left:18px; background-color:#695cfe; 
+                font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
+                onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Rotate()">
 
-                        <i class='fas fa-sync-alt'></i>
-                    </button>
+                    <i class='fas fa-sync-alt'></i>
+                </button>
 
-                    <button style="margin:10px; margin-right:0px; margin-left:16px; background-color:#695cfe; 
-                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Scale()">
+                <button style="margin:0px; margin-right:0px; margin-left:14px; background-color:#695cfe; 
+                font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
+                onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Scale()">
 
-                        <i class='fas fa-expand-arrows-alt'></i>
-                    </button>
-                </li>
-                <li> 
-                    <a href="#" class="camera-btn">Camera
-                        <span class="fas fa-caret-down five"></span>
-                    </a>
-                    <ul class="camera-show">
-                        <li>
-                            <div class="card-item">
-                                <span class="valueSpanFOV">Field of view: 75</span>
-                                <input type="range" class="custom-range" id="customFOV" min="0" max="180" value="75">
-                            </div>
-                            <div class="card-item">
-                                <span class="valueSpanNear">Near: 0.1</span>
-                                <input type="range" class="custom-range" id="customNear" min="0.1" max="100" value="0.1">
-                            </div>
-                            <div class="card-item">
-                                <span class="valueSpanFar">Far: 1000</span>
-                                <input type="range" class="custom-range" id="customFar" min="200" max="2000" value="1000">
-                            </div>
-                        </li>
-                    </ul>
-                </li>
-                
+                    <i class='fas fa-expand-arrows-alt'></i>
+                </button>
+            </li>
+            <li> 
+                <a href="#" class="camera-btn">Camera
+                    <span class="fas fa-caret-down five"></span>
+                </a>
+                <ul class="camera-show">
+                    <li>
+                        <div class="card-item">
+                            <span class="valueSpanFOV">Field of view: 75</span>
+                            <input type="range" class="custom-range" id="customFOV" min="0" max="180" value="75">
+                        </div>
+                        <div class="card-item">
+                            <span class="valueSpanNear">Near: 0.1</span>
+                            <input type="range" class="custom-range" id="customNear" min="0.1" max="100" value="0.1">
+                        </div>
+                        <div class="card-item">
+                            <span class="valueSpanFar">Far: 1000</span>
+                            <input type="range" class="custom-range" id="customFar" min="200" max="2000" value="1000">
+                        </div>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="mode">
+                <div class="toggle-switch">
+                    <span class="label">Dark Mode</span>
+                    <span class="switch"></span>
+                </div>
+            </li>
+            
 
         </ul>   
     </nav>
@@ -165,7 +172,25 @@
             document.getElementById("texture").click();
         };
 
-        
+        const body = document.querySelector("body"),
+            sidebar = body.querySelector(".sidebar"),
+            modeSwitch = body.querySelector(".toggle-switch"),
+            modeText = body.querySelector(".label");
+            
+            modeSwitch.addEventListener("click", () =>{
+                body.classList.toggle("dark");
+                if(body.classList.contains("dark")){
+                    ChangeBackGround(1); //dark
+                }else{
+                    ChangeBackGround(0); //light
+                }
+            });
+
+        $('.toggle-switch').click(function () {
+            $(this).toggleClass("click");
+            // $('.sidebar').toggleClass("show");
+        });
+
         $('.btn').click(function () {
             $(this).toggleClass("click");
             $('.sidebar').toggleClass("show");

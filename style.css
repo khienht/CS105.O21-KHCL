@@ -6,25 +6,42 @@
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
 }
+
 :root{
     --body-color: #e4e9f7;
     --sidebar-color: #fff;
     --primary-color: #695cfe;
     --primary-color-light: #f6f5ff;
-    --toggle-color: #ddd;
+    --toggle-color: #bababa;
+    --toggle1-color:rgb(197, 196, 196);
     --text-color: #707070;
+    --title-color: #131314;
+    --text_sub-color: #252525;
+    --submenu-color: rgba(142, 132, 248, 0.693);
   
     --tran-02: all 0.2s ease;
     --tran-03: all 0.3s ease;
     --tran-04: all 0.4s ease;
-    --tran-05: all 0.5s ease;
-  
-    
-  }
+    --tran-05: all 0.5s ease;    
+}
+
 body{
     font-family: Arial, Helvetica, sans-serif;
     position: relative;
     font-size: 18px;
+}
+
+body.dark{
+    --body-color: #18191a;
+    --sidebar-color: #242526;
+    --primary-color: #695cfe;
+    --primary-color-light: #ccc;
+    --toggle-color: white;
+    --toggle1-color:rgb(197, 196, 196);
+    --text-color: white;
+    --title-color: white;
+    --text_sub-color: #a1a1a1;
+    --submenu-color: rgba(142, 132, 248, 0.693);
 }
 
 .btn {
@@ -34,7 +51,7 @@ body{
     height: 45px;
     width: 45px;
     text-align: center;
-    background: #1b1b1b;
+    background: #695cfe;
     border-radius: 3px;
     cursor: pointer;
     transition: left 0.4s ease;
@@ -48,6 +65,7 @@ body{
     width: 44px;
     height: 40px;
     overflow: hidden;
+    margin-left: 5px;
 }
   
 .image-text img{
@@ -57,20 +75,14 @@ body{
 .icon{
     font-size: 20px;
 }
-.details .title{
-    font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    margin-top: 3px;
-}
   
 .details .name{
     font-size: 23px;
     font-weight: 530;
     transition: var(--tran-03);
-    white-space: nowrap;
     text-transform: uppercase;
-    margin-top: 4px;
+    margin-top: 5px;
+    color: var(--title-color);
 }
 
 .btn.click {
@@ -92,7 +104,7 @@ body{
     width: 250px;
     height: 100%;
     left: -250px;
-    background: var(--primary-color);
+    background: var(--sidebar-color);
     transition: left 0.4s ease;
 }
 
@@ -101,18 +113,18 @@ body{
 }
 
 .sidebar .text {
-    color: white;
+    color: var(--text-color);
     font-size: 25px;
     font-weight: 600;
     line-height: 65px;
     text-align: center;
-    background: #1e1e1e;
+    background: var(--sidebar-color);
     letter-spacing: 1px;
 }
 
 
 nav ul ul .adjustment_text{
-    color: white;
+    color: var(--text-color);
     font-size: 25px;
     font-weight: 600;
     line-height: 65px;
@@ -122,15 +134,15 @@ nav ul ul .adjustment_text{
 }
 
 nav ul {
-    background: #1b1b1b;
+    background: var(--sidebar-color);
     height: 100%;
     width: 100%;
     list-style: none;
 }
 
 nav ul li {
-    line-height: 60px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    line-height: 58px;
+    /* border-top: 1px solid rgba(255, 255, 255, 0.1); */
 }
 
 nav ul li:last-child {
@@ -139,24 +151,28 @@ nav ul li:last-child {
 
 nav ul li a {
     position: relative;
-    color: white;
+    color: var(--text-color);
     text-decoration: none;
     font-size: 18px;
     padding-left: 15px;
     font-weight: 500;
     display: block;
-    width: 100%;
+    width: 97%;
+    margin-top: 5px;
+    margin-left: 5px;
+    border-radius: 5px;
     border-left: 3px solid transparent;
 }
 
 nav ul li.active a {
-    color: var(--primary-color);
-    background: #1e1e1e;
-    border-left-color: var(--primary-color);
+    color: var(--primary-color-light);
+    background: var(--primary-color);
+    border-left-color: transparent;
 }
 
 nav ul li a:hover {
-    background: #1e1e1e;
+    color: var(--primary-color-light);
+    background: var(--primary-color);
 }
 
 nav ul ul {
@@ -191,19 +207,24 @@ nav ul ul li {
 
 nav ul ul li a {
     font-size: 17px;
-    color: #e6e6e6;
-    padding-left: 40px;
+    color: var(--text-color);
+    width: 80%;
+    margin-left: 35px;
 }
 
 nav ul li.active ul li a {
-    color: #e6e6e6;
-    background: #1b1b1b;
-    border-left-color: transparent;
+    color: var(--text-color);
+    background: var(--sidebar-color);
+}
+
+nav ul li.active ul li.active a {
+    color: var(--text-color);
+    background: var(--submenu-color);
 }
 
 nav ul ul li a:hover {
-    color: var(--primary-color) !important;
-    background: #1e1e1e !important;
+    color: var(--primary-color-light) !important;
+    background: var(--submenu-color) !important;
 }
 
 nav ul li a span {
@@ -229,15 +250,6 @@ nav ul li .card-item .valueSpanFar {
 nav ul li a span.rotate {
     transform: translateY(-50%) rotate(-180deg);
 }
-.sidebar .text {
-    color: white;
-    font-size: 25px;
-    font-weight: 600;
-    line-height: 65px;
-    text-align: center;
-    background: #1e1e1e;
-    letter-spacing: 1px;
-}
 
 .button-affine{
     position: absolute;
@@ -254,7 +266,7 @@ nav ul li a span.rotate {
 }
 
 .button-affine .item-btn:hover{
-    background-color: var(--primary-color);
+    background-color: #695cfe;
     color: #000;
 }
 
@@ -264,8 +276,7 @@ nav ul li a span.rotate {
     border-bottom: 1px dotted #000;
     font-size: 20px;
     font-weight: bold;
-    background-color: #ccc;
-    color: rgb(143, 210, 76);
+    background-color: var(--text_sub-color);
 }
 
 .card-body{
@@ -278,17 +289,56 @@ nav ul li a span.rotate {
 
 .card-item span{
     font-size: 18px;
-    color:#fff;
-    font-weight: 500;
+    color:var(--text-color);
+    font-weight: 450;
 }
 .card-item input{
     display: block;
-    width: 100%;
-    background-color: var(--primary-color-light);
+    width: 95%;
+    background-color: var(--toggle1-color);
     border-radius: 10px;
     appearance: none;
-    margin: 5px 0;
+    margin: 2px 0;
+    margin-left: 8px;
     cursor: pointer;
 }
 
+nav ul .mode .toggle-switch{
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.toggle-switch .label{
+    color: var(--text-color);
+    font-weight: 500;
+    padding-left: 22px;
+    font-size: 18px;
+}
+
+.toggle-switch .switch{
+    height: 24px;
+    position: relative;
+    width: 50px;
+    background-color: var(--toggle-color);
+    border-radius: 25px;
+    margin-left: 70px;
+}
+
+.switch::before{
+    content: '';
+    position: absolute;
+    height: 15px;
+    width: 15px;
+    border-radius: 50%;
+    top: 50%;
+    left: 5px;
+    transform: translateY(-50%);
+    background: var(--sidebar-color);
+    transition: var(--tran-03);
+}
+
+body.dark .switch::before{
+    left: 30px;  
+}
 
