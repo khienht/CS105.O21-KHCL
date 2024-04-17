@@ -2,8 +2,11 @@ import * as THREE from './lib/three.module.js';
 import { TeapotGeometry } from "three/addons/geometries/TeapotGeometry.js";
 import { GUI } from "./lib/dat.gui.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
 
-var scene, camera, renderer, mesh;
+var scene, camera, renderer, mesh, texture;
+var transControls;
+var type_material = 3;
 
 // Geometry
 var BoxG = new THREE.BoxGeometry(30,30,30,40,40,40);
@@ -44,6 +47,13 @@ function init(){
     // Controls
     var controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+
+    transControls = new TransformControls(camera, renderer.domElement);
+    transControls.size = 0.5;
+    transControls.addEventListener("dragging-changed", (event) => {
+        controls.enabled = !event.value;
+    });
+    transControls.addEventListener('change', render);
 
     // Resize handler
     function onWindowResize() {
@@ -86,7 +96,6 @@ function addMesh(id){
             mesh = new THREE.Mesh(TorusG,material);
             break;
         case 6:
-            // const geometry = new THREE.TeapotBufferGeometry();
             mesh = new THREE.Mesh(teapotGeo,material);
             break;
         case 7:{
@@ -107,7 +116,9 @@ function addMesh(id){
     mesh.name = "mesh1";
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+
     scene.add(mesh);
+    transform(mesh);
     render();
 }
 window.addMesh = addMesh;
@@ -127,4 +138,100 @@ function getHeart() {
     return heartShape;
 }
 
+function CloneMesh(dummy_mesh){
+    mesh.name = dummy_mesh.name;
+    mesh.position.set(dummy_mesh.position.x, dummy_mesh.position.y, dummy_mesh.position.z);
+    mesh.rotation.set(dummy_mesh.rotation.x, dummy_mesh.rotation.y, dummy_mesh.rotation.z);
+    mesh.scale.set(dummy_mesh.scale.x, dummy_mesh.scale.y, dummy_mesh.scale.z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    transform(mesh);
+}
 
+function SetSurface(mat){
+    mesh = scene.getObjectByName("mesh1");
+    if (mesh){
+        const dummy_mesh = mesh.clone();
+        scene.remove(mesh);
+
+        switch (mat){
+            case 1: //Point
+                material = new THREE.PointsMaterial({color: '#ffffff',size: 0.5});
+                mesh = new THREE.Points(dummy_mesh.geometry,material);
+                CloneMesh(dummy_mesh);
+                break;
+            case 2: //Line
+                material = new THREE.LineBasicMaterial({ color: '#ffffff' });
+                mesh = new THREE.Line(dummy_mesh.geometry, material);
+                CloneMesh(dummy_mesh);
+                break;
+            case 3: //Solid
+                material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                CloneMesh(dummy_mesh);
+                break;
+            case 4: //Image
+                material = new THREE.MeshBasicMaterial({ map: texture,  });
+                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                CloneMesh(dummy_mesh);
+                break;
+        }
+        render();
+    }
+}
+window.SetSurface = SetSurface
+
+function ImgTexture(url) {
+    mesh = scene.getObjectByName("mesh1");
+    if (mesh) {
+        texture = new THREE.TextureLoader().load(url);
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        SetSurface(4);
+    }
+}
+window.ImgTexture = ImgTexture;
+
+// Affine
+function Translate() {
+    transControls.setMode("translate");
+}
+window.Translate = Translate;
+
+function Rotate() {
+    transControls.setMode("rotate");
+}
+window.Rotate = Rotate;
+
+function Scale() {
+    transControls.setMode("scale");
+}
+window.Scale = Scale;
+
+function transform(mesh) {
+    transControls.attach(mesh);
+    scene.add(transControls);
+    console.log(transControls);
+    window.addEventListener('keydown', function(event) {
+        switch (event.keyCode) {
+            case 84: // T
+                Translate();
+                break;
+            case 82: // R
+                Rotate();
+                break;
+            case 83: // S
+                Scale();
+                break;
+            case 88: // X
+                transControls.showX = !transControls.showX;
+                break;
+            case 89: // Y
+                transControls.showY = !transControls.showY;
+                break;
+            case 90: // Z
+                transControls.showZ = !transControls.showZ;
+                break;
+        }
+    });
+}

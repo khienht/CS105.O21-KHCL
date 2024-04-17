@@ -52,12 +52,12 @@
                         <span class="fas fa-caret-down second"><span>
                     </a>
                     <ul class="serv-show">
-                        <li><a href="#" >Point</a></li>
-                        <li><a href="#" >Line</a></li>
-                        <li><a href="#" >Solid</a></li>
+                        <li><a href="#" onclick="SetSurface(1);">Point</a></li>
+                        <li><a href="#" onclick="SetSurface(2);">Line</a></li>
+                        <li><a href="#" onclick="SetSurface(3);">Solid</a></li>
                         <li>
                             <input type="file" accept="image/*" id="texture" style="display: none;"
-                                />
+                            onchange="ImgTexture(window.URL.createObjectURL(this.files[0]))" />
                             <a href="#" name="button" onclick="Uploadimage();">Texture</a>
                         </li>
                     </ul>
@@ -87,21 +87,21 @@
                 <li>
                     <button style="margin:10px; margin-right:18px; margin-left:40px; background-color:#695cfe; 
                     font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" >
+                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Translate()" >
 
                         <i class='fas fa-arrows-alt'></i>
                     </button>
 
                     <button style="margin:10px; margin-right:18px; margin-left:16px; background-color:#695cfe; 
                     font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" >
+                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Rotate()">
 
                         <i class='fas fa-sync-alt'></i>
                     </button>
 
                     <button style="margin:10px; margin-right:0px; margin-left:16px; background-color:#695cfe; 
                     font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" >
+                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Scale()">
 
                         <i class='fas fa-expand-arrows-alt'></i>
                     </button>
