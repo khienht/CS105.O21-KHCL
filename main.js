@@ -11,6 +11,9 @@ var LightSwitch = false;
 var meshPlane,light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
 var gui;
 
+var transControls, color_bkgr, color_mat;
+var type_material = 3;
+var img =0;
 // Geometry
 var BoxG = new THREE.BoxGeometry(30,30,30,40,40,40);
 var ShereG = new THREE.SphereGeometry(20,20,20);
@@ -25,6 +28,9 @@ material.needsUpdate = true;
 init();
 function init(){
     scene = new THREE.Scene();
+
+    material = new THREE.MeshBasicMaterial({color: color_mat});
+    material.needsUpdate = true;
 
     // Camera
     var camera_x = 1;
@@ -100,12 +106,27 @@ function init(){
     
 }
 
+//dark light mode
+function ChangeBackGround(id){
+    if (id==1){ // dark
+        color_bkgr = 0x000000;
+        color_mat = 0xffffff;
+    }else{ // light
+        color_bkgr = 0xffffff;
+        color_mat = 0x707070;
+    }
+    scene.background = new THREE.Color(color_bkgr);
+    
+    mesh.material.color.set(color_mat);
+}
+window.ChangeBackGround = ChangeBackGround;
+
 function render(){
     requestAnimationFrame(render);
 	renderer.render(scene, camera);
 }
 
-//vẽ hình
+//draw geometry
 function addMesh(id){
     mesh = scene.getObjectByName("mesh1");
     scene.remove(mesh);
@@ -176,10 +197,12 @@ function CloneMesh(dummy_mesh){
     mesh.scale.set(dummy_mesh.scale.x, dummy_mesh.scale.y, dummy_mesh.scale.z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    
     scene.add(mesh);
     transform(mesh);
 }
 
+// change surface
 function SetSurface(mat){
     mesh = scene.getObjectByName("mesh1");
     if (mesh){
@@ -188,23 +211,27 @@ function SetSurface(mat){
 
         switch (mat){
             case 1: //Point
-                material = new THREE.PointsMaterial({color: '#ffffff',size: 0.5});
-                mesh = new THREE.Points(dummy_mesh.geometry,material);
+                mesh.material = new THREE.PointsMaterial({color: color_mat,size: 0.5});
+                mesh = new THREE.Points(dummy_mesh.geometry,mesh.material);
                 CloneMesh(dummy_mesh);
+                img=0;
                 break;
             case 2: //Line
-                material = new THREE.LineBasicMaterial({ color: '#ffffff' });
+                material = new THREE.LineBasicMaterial({ color: color_mat });
                 mesh = new THREE.Line(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                img=0;
                 break;
             case 3: //Solid
-                material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+                material = new THREE.MeshBasicMaterial({ color: color_mat });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                img=0;
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
                 material = new THREE.MeshBasicMaterial({ map: texture,  });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                img=1;
                 CloneMesh(dummy_mesh);
                 break;
         }
@@ -223,7 +250,7 @@ function ImgTexture(url) {
 }
 window.ImgTexture = ImgTexture;
 
-// Affine
+// Affine transformation
 function Translate() {
     transControls.setMode("translate");
 }
@@ -467,3 +494,24 @@ function setLight(LightID) {
 	render();
 }
 window.setLight = setLight;
+// update camera
+function setFOV(value) {
+    camera.fov = Number(value);
+    camera.updateProjectionMatrix();
+    render();
+}
+window.setFOV = setFOV;
+
+function setFar(value) {
+    camera.far = Number(value);
+    camera.updateProjectionMatrix();
+    render();
+}
+window.setFar = setFar;
+
+function setNear(value) {
+    camera.near = Number(value);
+    camera.updateProjectionMatrix();
+    render();
+}
+window.setNear = setNear;
