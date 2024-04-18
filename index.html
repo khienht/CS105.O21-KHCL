@@ -67,10 +67,12 @@
                         <span class="fas fa-caret-down third"></span>
                     </a>
                     <ul class="light-show">
-                        <li><a href="#" >Point light</a></li>
-                        <li><a href="#" >Ambient Light</a></li>
-                        <li><a href="#" >Spot Light</a></li>
-                        <li><a href="#" >Remove Light</a></li>
+                        <li><a href="#" onclick="setLight(1);" >Ambient light</a></li>
+                        <li><a href="#" onclick="setLight(2);" >Hemisphere light</a></li>
+                        <li><a href="#" onclick="setLight(3);" >Directional Light</a></li>
+                        <li><a href="#" onclick="setLight(4);" >Pointlight</a></li>
+                        <li><a href="#" onclick="setLight(5);" >Spotlight</a></li>
+                        <li><a href="#" onclick="setLight(6);" >Remove Light</a></li>
                     </ul>
                 </li>
                 <li> 
@@ -131,6 +133,7 @@
 
         </ul>   
     </nav>
+    <div class="gui-control" style="position: fixed; top: 0;;right: 0;"> <div id="my-gui-container"> </div> </div> 
     <div id="webgl"></div>
     <script>
         $(document).ready(function() {
