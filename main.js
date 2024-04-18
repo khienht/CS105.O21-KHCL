@@ -14,6 +14,7 @@ var gui;
 var transControls, color_bkgr, color_mat;
 var type_material = 3;
 var img =0;
+var material;
 // Geometry
 var BoxG = new THREE.BoxGeometry(30,30,30,40,40,40);
 var ShereG = new THREE.SphereGeometry(20,20,20);
@@ -22,8 +23,7 @@ var CylinderG = new THREE.CylinderGeometry(15,15,30,30,5);
 var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
 var teapotGeo = new TeapotGeometry(16);
 
-var material = new THREE.MeshPhongMaterial({color: '#ffffff'});
-material.needsUpdate = true;
+var obj_material = new THREE.MeshPhongMaterial({color: '#ffffff'});
 
 init();
 function init(){
@@ -133,22 +133,22 @@ function addMesh(id){
 
     switch(id){
         case 1: 
-            mesh = new THREE.Mesh(BoxG, material);
+            mesh = new THREE.Mesh(BoxG, obj_material);
             break;
         case 2:
-            mesh = new THREE.Mesh(ShereG, material);
+            mesh = new THREE.Mesh(ShereG, obj_material);
             break;
         case 3:
-            mesh = new THREE.Mesh(ConeG, material);
+            mesh = new THREE.Mesh(ConeG, obj_material);
             break;
         case 4:
-            mesh = new THREE.Mesh(CylinderG, material);
+            mesh = new THREE.Mesh(CylinderG, obj_material);
             break;
         case 5:
-            mesh = new THREE.Mesh(TorusG, material);
+            mesh = new THREE.Mesh(TorusG, obj_material);
             break;
         case 6:
-            mesh = new THREE.Mesh(teapotGeo, material);
+            mesh = new THREE.Mesh(teapotGeo, obj_material);
             break;
         case 7:{
             const extrudeSettings = { 
