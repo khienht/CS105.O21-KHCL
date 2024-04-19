@@ -130,17 +130,17 @@ function ChangeBackGround(id){
 
     if (id==1){ // dark
         color_bkgr = 0x000000;
-        color_mat = 0xffffff;
+        // color_mat = 0xffffff;
     }else{ // light
         color_bkgr = 0xffffff;
-        color_mat = 0x707070;
+        // color_mat = 0x707070;
     }
 
     if(mesh){
-        mesh.material.color.set(color_mat);
+        mesh.material.color.set(objColor);
         mesh.material.needsUpdate = true;
     }
-    material.color.set(color_mat);
+    material.color.set(objColor);
     
     scene.background = new THREE.Color(color_bkgr);
 }
@@ -163,22 +163,22 @@ function addMesh(id){
 
     switch(id){
         case 1: 
-            mesh = new THREE.Mesh(BoxG, material);
+            mesh = new THREE.Mesh(BoxG, obj_material);
             break;
         case 2:
-            mesh = new THREE.Mesh(ShereG, material);
+            mesh = new THREE.Mesh(ShereG, obj_material);
             break;
         case 3:
-            mesh = new THREE.Mesh(ConeG, material);
+            mesh = new THREE.Mesh(ConeG, obj_material);
             break;
         case 4:
-            mesh = new THREE.Mesh(CylinderG, material);
+            mesh = new THREE.Mesh(CylinderG, obj_material);
             break;
         case 5:
-            mesh = new THREE.Mesh(TorusG, material);
+            mesh = new THREE.Mesh(TorusG, obj_material);
             break;
         case 6:
-            mesh = new THREE.Mesh(teapotGeo, material);
+            mesh = new THREE.Mesh(teapotGeo, obj_material);
             break;
         case 7:{
             const extrudeSettings = { 
@@ -189,7 +189,7 @@ function addMesh(id){
                 bevelSize: 1, 
                 bevelThickness: 1 };
             var heart = new THREE.ExtrudeGeometry(getHeart(), extrudeSettings);
-            mesh = new THREE.Mesh(heart, material);
+            mesh = new THREE.Mesh(heart, obj_material);
             break;
         }       
     }
@@ -203,9 +203,9 @@ function addMesh(id){
             mesh.material.color.setHex(value);
             material.color.setHex(value);
         });
+        objcolorflag= true;
     }
-    objcolorflag= true;
-
+    
     mesh.name = "mesh1";
     mesh.castShadow = true;
     mesh.receiveShadow = true;
