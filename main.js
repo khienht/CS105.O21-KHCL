@@ -564,3 +564,92 @@ function setNear(value) {
     render();
 }
 window.setNear = setNear;
+
+//animation
+let time = Date.now();
+
+mesh = scene.getObjectByName("mesh1");
+var id_animation1, id_animation2, id_animation3;
+
+function Animation1() {
+    const current_time = Date.now();
+	const delta_time = current_time - time;
+
+    time = current_time;
+
+    cancelAnimationFrame(id_animation3);
+    cancelAnimationFrame(id_animation2);
+    cancelAnimationFrame(id_animation1);
+    mesh.rotation.x += delta_time * 0.0005;
+    mesh.rotation.y += delta_time * 0.002;
+    mesh.rotation.z += delta_time * 0.001;
+    
+    console.log("Animation 1");
+    id_animation1 = requestAnimationFrame(Animation1);
+    renderer.render(scene, camera);
+}
+window.Animation1 = Animation1
+
+var rotationSpeed = 0.01; // Tốc độ xoay
+var scaleSpeed = 0.01; // Tốc độ thu/phóng
+var isScalingUp = true; // Cờ để xác định trạng thái thu/phóng
+
+function Animation2() {
+    cancelAnimationFrame(id_animation3);
+    cancelAnimationFrame(id_animation2);
+    cancelAnimationFrame(id_animation1);
+	// Xoay đối tượng
+    mesh.rotation.y += rotationSpeed;
+
+    // Thu/phóng đối tượng
+    if (isScalingUp) {
+        mesh.scale.x += scaleSpeed;
+        mesh.scale.y += scaleSpeed;
+        mesh.scale.z += scaleSpeed;
+    } else {
+        mesh.scale.x -= scaleSpeed;
+        mesh.scale.y -= scaleSpeed;
+        mesh.scale.z -= scaleSpeed;
+    }
+
+    // Kiểm tra nếu đối tượng đạt tới giới hạn thu/phóng thì đảo chiều
+    if (mesh.scale.x >= 2 || mesh.scale.x <= 0.5) {
+        isScalingUp = !isScalingUp;
+    }
+
+    console.log("Animation 2");
+    id_animation2 = requestAnimationFrame(Animation2);
+    renderer.render(scene, camera);
+}
+window.Animation2 = Animation2
+
+var alpha=0;
+function Animation3(){
+    cancelAnimationFrame(id_animation3);
+    cancelAnimationFrame(id_animation2);
+    cancelAnimationFrame(id_animation1);
+
+    alpha += Math.PI * 0.005; 
+    if (alpha >= Math.PI * 2) alpha = 0; // Đảm bảo alpha không vượt quá 2π
+
+    mesh.position.x = Math.sin(alpha) * 10;
+    mesh.position.z = Math.cos(alpha) * 10;
+    
+    const rotationSpeed = 0.02; 
+    mesh.rotation.y += rotationSpeed;
+    mesh.rotation.z += rotationSpeed * 0.5; 
+
+    console.log("Animation 3");
+    id_animation3 = requestAnimationFrame(Animation3);
+    renderer.render(scene, camera);
+}
+window.Animation3 = Animation3
+
+function RemoveAllAnimation() {
+    cancelAnimationFrame(id_animation1);
+    cancelAnimationFrame(id_animation2);
+    cancelAnimationFrame(id_animation3);
+    mesh.rotation.set(0, 0, 0);
+    render();
+}
+window.RemoveAllAnimation = RemoveAllAnimation;
