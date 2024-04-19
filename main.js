@@ -12,10 +12,9 @@ var meshPlane,light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereF
 var gui;
 var objColor, objColorGUI, objcolorflag = false;
 
-var transControls, color_bkgr, color_mat;
-var type_material = 3;
-var img =0;
+var transControls, color_bkgr, color_mat = 0xffffff;;
 var material;
+
 // Geometry
 var BoxG = new THREE.BoxGeometry(30,30,30,40,40,40);
 var ShereG = new THREE.SphereGeometry(20,20,20);
@@ -30,9 +29,7 @@ init();
 function init(){
     scene = new THREE.Scene();
 
-    material = new THREE.MeshBasicMaterial();
-    // material = new THREE.MeshBasicMaterial({color: color_mat}); // warning mesh basic ko có thuộc tính color.
-    material.needsUpdate = true;
+    material = new THREE.MeshBasicMaterial({color: '#ffffff'});
 
     // Camera
     var camera_x = 1;
@@ -129,6 +126,8 @@ function init(){
 
 //dark light mode
 function ChangeBackGround(id){
+    mesh = scene.getObjectByName("mesh1");
+
     if (id==1){ // dark
         color_bkgr = 0x000000;
         color_mat = 0xffffff;
@@ -136,9 +135,14 @@ function ChangeBackGround(id){
         color_bkgr = 0xffffff;
         color_mat = 0x707070;
     }
-    scene.background = new THREE.Color(color_bkgr);
+
+    if(mesh){
+        mesh.material.color.set(color_mat);
+        mesh.material.needsUpdate = true;
+    }
+    material.color.set(color_mat);
     
-    mesh.material.color.set(color_mat);
+    scene.background = new THREE.Color(color_bkgr);
 }
 window.ChangeBackGround = ChangeBackGround;
 
@@ -159,22 +163,22 @@ function addMesh(id){
 
     switch(id){
         case 1: 
-            mesh = new THREE.Mesh(BoxG, obj_material);
+            mesh = new THREE.Mesh(BoxG, material);
             break;
         case 2:
-            mesh = new THREE.Mesh(ShereG, obj_material);
+            mesh = new THREE.Mesh(ShereG, material);
             break;
         case 3:
-            mesh = new THREE.Mesh(ConeG, obj_material);
+            mesh = new THREE.Mesh(ConeG, material);
             break;
         case 4:
-            mesh = new THREE.Mesh(CylinderG, obj_material);
+            mesh = new THREE.Mesh(CylinderG, material);
             break;
         case 5:
-            mesh = new THREE.Mesh(TorusG, obj_material);
+            mesh = new THREE.Mesh(TorusG, material);
             break;
         case 6:
-            mesh = new THREE.Mesh(teapotGeo, obj_material);
+            mesh = new THREE.Mesh(teapotGeo, material);
             break;
         case 7:{
             const extrudeSettings = { 
@@ -185,18 +189,19 @@ function addMesh(id){
                 bevelSize: 1, 
                 bevelThickness: 1 };
             var heart = new THREE.ExtrudeGeometry(getHeart(), extrudeSettings);
-            mesh = new THREE.Mesh(heart, obj_material);
+            mesh = new THREE.Mesh(heart, material);
             break;
         }       
     }
 
     if (objcolorflag==false) {
         // Thêm objColorGUI vào GUI
-        objColor = { color: obj_material.color.getHex() };
+        objColor = { color: mesh.material.color.getHex() };
         objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
         // Định nghĩa hàm callback khi màu sắc thay đổi
         objColorGUI.onChange(function (value) {
             mesh.material.color.setHex(value);
+            material.color.setHex(value);
         });
     }
     objcolorflag= true;
@@ -260,27 +265,23 @@ function SetSurface(mat){
 
         switch (mat){
             case 1: //Point
-                mesh.material = new THREE.PointsMaterial({color: color_mat,size: 0.5});
-                mesh = new THREE.Points(dummy_mesh.geometry,mesh.material);
+                mesh.material = new THREE.PointsMaterial({color: mesh.material.color, size: 0.5});
+                mesh = new THREE.Points(dummy_mesh.geometry, mesh.material);
                 CloneMesh(dummy_mesh);
-                img=0;
                 break;
             case 2: //Line
-                material = new THREE.LineBasicMaterial({ color: color_mat });
-                mesh = new THREE.Line(dummy_mesh.geometry, material);
+                mesh.material = new THREE.LineBasicMaterial({ color: mesh.material.color });
+                mesh = new THREE.Line(dummy_mesh.geometry, mesh.material);
                 CloneMesh(dummy_mesh);
-                img=0;
                 break;
             case 3: //Solid
-                material = new THREE.MeshBasicMaterial({ color: color_mat });
-                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
-                img=0;
+                mesh.material = new THREE.MeshBasicMaterial({ color: mesh.material.color });
+                mesh = new THREE.Mesh(dummy_mesh.geometry, mesh.material);
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                material = new THREE.MeshBasicMaterial({ map: texture,  });
-                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
-                img=1;
+                mesh.material = new THREE.MeshBasicMaterial({ map: texture,  });
+                mesh = new THREE.Mesh(dummy_mesh.geometry, mesh.material);
                 CloneMesh(dummy_mesh);
                 break;
         }

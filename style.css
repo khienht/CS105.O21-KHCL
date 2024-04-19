@@ -170,6 +170,10 @@ nav ul li.active a {
     border-left-color: transparent;
 }
 
+nav ul li.active a span {
+    color: var(--body-color);
+}
+
 nav ul li a:hover {
     color: var(--primary-color-light);
     background: var(--primary-color);
@@ -178,26 +182,6 @@ nav ul li a:hover {
 nav ul ul {
     position: static;
     display: none;
-}
-
-nav ul .feat-show.show {
-    display: block;
-}
-
-nav ul .serv-show.show1 {
-    display: block;
-}
-
-nav ul .light-show.show2 {
-    display: block;
-}
-
-nav ul .animation-show.show3 {
-    display: block;
-}
-
-nav ul .camera-show.show4 {
-    display: block;
 }
 
 nav ul ul li {

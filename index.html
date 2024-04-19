@@ -36,7 +36,7 @@
                     <a href="#" class="feat-btn">Geometry
                         <span class="fas fa-caret-down first"></span>
                     </a>
-                    <ul class="feat-show">
+                    <ul class="submenu">
                         <li><a href="#" onclick="addMesh(1);">Box</a></li>
                         <li><a href="#" onclick="addMesh(2);">Sphere</a></li>
                         <li><a href="#" onclick="addMesh(3);">Cone</a></li>
@@ -51,7 +51,7 @@
                     <a href="#" class="serv-btn">Surface
                         <span class="fas fa-caret-down second"><span>
                     </a>
-                    <ul class="serv-show">
+                    <ul class="submenu">
                         <li><a href="#" onclick="SetSurface(1);">Point</a></li>
                         <li><a href="#" onclick="SetSurface(2);">Line</a></li>
                         <li><a href="#" onclick="SetSurface(3);">Solid</a></li>
@@ -66,7 +66,7 @@
                     <a href="#" class="light-btn">Light
                         <span class="fas fa-caret-down third"></span>
                     </a>
-                    <ul class="light-show">
+                    <ul class="submenu">
                         <li><a href="#" onclick="setLight(1);" >Ambient light</a></li>
                         <li><a href="#" onclick="setLight(2);" >Hemisphere light</a></li>
                         <li><a href="#" onclick="setLight(3);" >Directional Light</a></li>
@@ -79,7 +79,7 @@
                     <a href="#" class="animation-btn">Animation
                         <span class="fas fa-caret-down four"></span>
                     </a>
-                    <ul class="animation-show">
+                    <ul class="submenu">
                         <li ><a href="#">Rotate & move </a></li>
                         
                         <li><a href="#">Up & down</a></li>
@@ -112,7 +112,7 @@
                 <a href="#" class="camera-btn">Camera
                     <span class="fas fa-caret-down five"></span>
                 </a>
-                <ul class="camera-show">
+                <ul class="submenu">
                     <li>
                         <div class="card-item">
                             <span class="valueSpanFOV">Field of view: 75</span>
@@ -198,28 +198,35 @@
             $(this).toggleClass("click");
             $('.sidebar').toggleClass("show");
         });
-        $('.feat-btn').click(function () {
-            $('nav ul .feat-show').toggleClass("show");
-            $('nav ul .first').toggleClass("rotate");
-        });
-        $('.serv-btn').click(function () {
-            $('nav ul .serv-show').toggleClass("show1");
-            $('nav ul .second').toggleClass("rotate");
-        });
-        $('.light-btn').click(function () {
-            $('nav ul .light-show').toggleClass("show2");
-            $('nav ul .third').toggleClass("rotate");
-        });
-        $('.animation-btn').click(function () {
-            $('nav ul .animation-show').toggleClass("show3");
-            $('nav ul .four').toggleClass("rotate");
-        });
-        $('.camera-btn').click(function () {
-            $('nav ul .camera-show').toggleClass("show4");
-            $('nav ul .five').toggleClass("rotate");
-        });
+            
+        //open submenu
         $('nav ul li').click(function () {
-            $(this).addClass("active").siblings().removeClass("active");});
+            var activeSibling = $(this).siblings().filter('.active');
+            activeSibling.each(function(index, element) {
+                var sibling = $(element);
+                sibling.find('.fas').toggleClass("rotate");
+            });
+
+            $(this).siblings().find('.submenu').slideUp();
+            var isOpen = $(this).find('.submenu').is(':visible');
+
+            // $('.submenu').slideUp();
+
+            if (!isOpen) {
+                $(this).find('.submenu').slideDown();
+                $(this).find('.fas').toggleClass("rotate");
+                $(this).addClass("active").siblings().removeClass("active");
+            }else{
+                $(this).find('.fas').toggleClass("rotate");
+                $(this).find('.submenu').slideUp();
+                $(this).removeClass("active");
+            }
+
+        });
+
+        $('.submenu').click(function(event){
+            event.stopPropagation();
+        });
     </script>
     
 </body>
