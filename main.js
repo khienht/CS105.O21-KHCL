@@ -10,6 +10,7 @@ var transControls;
 var LightSwitch = false;
 var meshPlane,light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
 var gui;
+var objColor, objColorGUI, objcolorflag = false;
 
 var transControls, color_bkgr, color_mat;
 var type_material = 3;
@@ -29,7 +30,8 @@ init();
 function init(){
     scene = new THREE.Scene();
 
-    material = new THREE.MeshBasicMaterial({color: color_mat});
+    material = new THREE.MeshBasicMaterial();
+    // material = new THREE.MeshBasicMaterial({color: color_mat}); // warning mesh basic ko có thuộc tính color.
     material.needsUpdate = true;
 
     // Camera
@@ -85,6 +87,25 @@ function init(){
         gui.updateDisplay();
 	}
 
+    // Thay đổi nền background bằng gui control
+    // color_bkgr = {
+    //     color: 0x000000 
+    // };
+    // // Thêm GUI control cho màu nền
+    // var bgFolder = gui.addFolder('Background'); // Tạo một folder mới trong GUI
+    // bgFolder.addColor(color_bkgr, 'color').name('Color').onChange(function(value) {
+    //     renderer.setClearColor(value); // Đặt màu nền của renderer
+    // });
+
+    // View gui controls
+    {
+        const folderviewgui = gui.addFolder("View");
+		// folderviewgui.open();
+		folderviewgui.add(camera.position, "x", -600, 600).name("Camera X").onChange(updateCamera);
+		folderviewgui.add(camera.position, "y", -600, 600).name("Camera Y").onChange(updateCamera);
+		folderviewgui.add(camera.position, "z", -600, 600).name("Camera Z").onChange(updateCamera);
+    }
+
     // Init plane for showing shadow
 	const planeGeo = new THREE.PlaneGeometry(size, size);
 	const planeMat = new THREE.MeshPhongMaterial({
@@ -96,7 +117,7 @@ function init(){
 		meshPlane.rotation.x = -Math.PI / 2;
 	}
 
-    //Light
+    // Light
 	light = new THREE.AmbientLight("#FFFFFF", 0.5);
 	scene.add(light);
 
@@ -124,6 +145,11 @@ window.ChangeBackGround = ChangeBackGround;
 function render(){
     requestAnimationFrame(render);
 	renderer.render(scene, camera);
+}
+
+function updateCamera() {
+	camera.updateProjectionMatrix();
+	render();
 }
 
 //draw geometry
@@ -161,10 +187,20 @@ function addMesh(id){
             var heart = new THREE.ExtrudeGeometry(getHeart(), extrudeSettings);
             mesh = new THREE.Mesh(heart, obj_material);
             break;
-        }
-            
+        }       
     }
-    
+
+    if (objcolorflag==false) {
+        // Thêm objColorGUI vào GUI
+        objColor = { color: obj_material.color.getHex() };
+        objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
+        // Định nghĩa hàm callback khi màu sắc thay đổi
+        objColorGUI.onChange(function (value) {
+            mesh.material.color.setHex(value);
+        });
+    }
+    objcolorflag= true;
+
     mesh.name = "mesh1";
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -174,6 +210,19 @@ function addMesh(id){
     render();
 }
 window.addMesh = addMesh;
+
+function removeGeometry(){
+	if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag== true ) {
+        scene.remove(mesh);
+        gui.remove(objColorGUI);
+        transControls.detach();
+        renderer.render(scene, camera);
+    } else {
+        console.log("Mesh không tồn tại trong scene.");
+    }
+	objcolorflag = false;
+}
+window.removeGeometry = removeGeometry;
 
 function getHeart() {
     const x = -10,
@@ -322,7 +371,6 @@ function setLight(LightID) {
 	if (LightSwitch){
 		removeLight();
 	}
-    
 	switch (LightID) {
 		case 1:	//Ambient light
 			light = new THREE.AmbientLight(0xffffff, 0.5);
@@ -451,7 +499,7 @@ function setLight(LightID) {
             LightSwitch = true;
 			break;
 		case 5:	//Spotlight
-            light = new THREE.SpotLight(0xffffff, 5, 100, Math.PI/3.5, 0, 0);
+            light = new THREE.SpotLight(0xffffff, 5, 100, Math.PI/1.5, 0, 0);
             light.name = "SpotLight";
             light.position.set(5, 60, 5);
             light.castShadow = true;
