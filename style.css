@@ -9,15 +9,16 @@
 
 :root{
     --body-color: #e4e9f7;
-    --sidebar-color: #fff;
+    --sidebar-color: rgba(0, 0, 0, 0.2);
     --primary-color: #695cfe;
     --primary-color-light: #f6f5ff;
     --toggle-color: #bababa;
     --toggle1-color:rgb(197, 196, 196);
-    --text-color: #707070;
-    --title-color: #131314;
-    --text_sub-color: #252525;
-    --submenu-color: rgba(142, 132, 248, 0.693);
+    --text-color: black;
+    --title-color: white;
+    --text_sub-color: black;
+    --submenu-color: rgba(0, 0, 0, 0.2);
+    --submenu-color1: rgba(105, 92, 254, 0.5);
   
     --tran-02: all 0.2s ease;
     --tran-03: all 0.3s ease;
@@ -33,66 +34,21 @@ body{
 
 body.dark{
     --body-color: #18191a;
-    --sidebar-color: #242526;
+    --sidebar-color: rgba(255, 255, 255, 0.1);
     --primary-color: #695cfe;
     --primary-color-light: #ccc;
     --toggle-color: white;
     --toggle1-color:rgb(197, 196, 196);
     --text-color: white;
     --title-color: white;
-    --text_sub-color: #a1a1a1;
-    --submenu-color: rgba(142, 132, 248, 0.693);
+    --text_sub-color: black;
+    --submenu-color: rgba(255, 255, 255, 0.25);
+    --submenu-color1: rgba(105, 92, 254, 0.5);
 }
 
-.btn {
-    position: absolute;
-    top: 15px;
-    left: 45px;
-    height: 45px;
-    width: 45px;
-    text-align: center;
-    background: #695cfe;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: left 0.4s ease;
-}
-.sidebar .head{
-    display: flex;
-    gap: 20px;
-}
-
-.image-text{
-    width: 44px;
-    height: 40px;
-    overflow: hidden;
-    margin-left: 5px;
-}
-  
-.image-text img{
-    width: 100%;
-    object-fit: cover;
-} 
 .icon{
-    font-size: 20px;
-}
-  
-.details .name{
-    font-size: 23px;
-    font-weight: 530;
-    transition: var(--tran-03);
-    text-transform: uppercase;
-    margin-top: 5px;
-    color: var(--title-color);
-}
-
-.btn.click {
-    left: 260px;
-}
-
-.btn span {
-    color: white;
-    font-size: 28px;
-    line-height: 45px;
+    font-size: 30px;
+    margin-top: 10px;
 }
 
 .btn.click span:before {
@@ -101,228 +57,109 @@ body.dark{
 
 .sidebar {
     position: fixed;
-    width: 250px;
-    height: 100%;
-    left: -250px;
+    width: 60px;
+    height: 55%;
     background: var(--sidebar-color);
+    /* box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);; */
     transition: left 0.4s ease;
-}
-
-.sidebar.show {
-    left: 0px;
-}
-
-.sidebar .text {
-    color: var(--text-color);
-    font-size: 25px;
-    font-weight: 600;
-    line-height: 65px;
-    text-align: center;
-    background: var(--sidebar-color);
-    letter-spacing: 1px;
-}
-
-
-nav ul ul .adjustment_text{
-    color: var(--text-color);
-    font-size: 25px;
-    font-weight: 600;
-    line-height: 65px;
-    text-align: center;
-    background: #1e1e1e;
-    letter-spacing: 1px;
-}
-
-nav ul {
-    background: var(--sidebar-color);
-    height: 100%;
-    width: 100%;
-    list-style: none;
+    margin-top: 120px;
+    margin-left: 10px;
+    border-radius: 10px;
 }
 
 nav ul li {
-    line-height: 58px;
+    /* line-height: 58px; */
+    position: relative;
+    list-style: none;
     /* border-top: 1px solid rgba(255, 255, 255, 0.1); */
 }
 
-nav ul li:last-child {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-nav ul li a {
+nav ul li a{
     position: relative;
     color: var(--text-color);
     text-decoration: none;
     font-size: 18px;
-    padding-left: 15px;
     font-weight: 500;
-    display: block;
-    width: 97%;
-    margin-top: 5px;
-    margin-left: 5px;
-    border-radius: 5px;
-    border-left: 3px solid transparent;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+nav ul li a .text,
+nav ul li a .mode-text{
+    position: absolute;
+    left: 70px;
+    top: 30%;
+    border-radius: 4px;
+    color: var(--text-color);
+    background-color: transparent;
+    opacity: 0;
+    visibility: hidden;
+}
+nav ul li a:hover .mode-text,
+nav ul li a:hover .text{
+    left: 70px;
+    opacity: 1;
+    visibility: visible;
+}
+
+nav ul li a .text::after{
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 20%;
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+    background-color: transparent;
+    z-index: -1;
 }
 
 nav ul li.active a {
-    color: var(--primary-color-light);
-    background: var(--primary-color);
-    border-left-color: transparent;
+    color: var(--primary-color);
 }
 
 nav ul li.active a span {
-    color: var(--body-color);
+    color: var(--primary-color);
+}
+nav ul li a:hover .icon {
+    color: var(--primary-color);
 }
 
-nav ul li a:hover {
-    color: var(--primary-color-light);
-    background: var(--primary-color);
-}
 
+/* sub menu */
 nav ul ul {
-    position: static;
+    position: absolute;
     display: none;
+    left: 70px;
+    width: 90px;
+    background-color: transparent;
 }
 
 nav ul ul li {
     line-height: 42px;
-    border-top: none;
 }
 
 nav ul ul li a {
-    font-size: 17px;
-    color: var(--text-color);
-    width: 80%;
-    margin-left: 35px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--submenu-color);
 }
 
 nav ul li.active ul li a {
-    color: var(--text-color);
-    background: var(--sidebar-color);
+    color: var(--text_sub-color);
+    background:var(--submenu-color);
 }
-
 nav ul li.active ul li.active a {
-    color: var(--text-color);
-    background: var(--submenu-color);
+    color: var(--title-color);
+    background: var(--submenu-color1);
 }
-
 nav ul ul li a:hover {
-    color: var(--primary-color-light) !important;
-    background: var(--submenu-color) !important;
+    color: var(--title-color) !important;
+    /* background: var(--sidebar-color) !important; */
 }
 
-nav ul li a span {
-    position: absolute;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-    font-size: 22px;
-    transition: transform 0.4s;
-}
-nav ul li .card-item .valueSpanFOV 
-{
-    margin: 0px 40px;
-}
 
-nav ul li .card-item .valueSpanNear {
-    margin: 0px 40px;
-}
 
-nav ul li .card-item .valueSpanFar {
-    margin: 0px 40px;
-}
-nav ul li a span.rotate {
-    transform: translateY(-50%) rotate(-180deg);
-}
-
-.button-affine{
-    position: absolute;
-    top: 75px;
-    left: 25px;
-}
-
-.button-affine .item-btn{
-    padding: 10px;
-    background-color: #fff;
-    margin: 15px 0;
-    border-radius: 10px;
-    cursor: pointer;
-}
-
-.button-affine .item-btn:hover{
-    background-color: #695cfe;
-    color: #000;
-}
-
-.card-header{
-    padding: 10px;
-    text-align: center;
-    border-bottom: 1px dotted #000;
-    font-size: 20px;
-    font-weight: bold;
-    background-color: var(--text_sub-color);
-}
-
-.card-body{
-    padding: 8px 16px;
-}
-
-.card-item{
-    margin: -10px 0;
-}
-
-.card-item span{
-    font-size: 18px;
-    color:var(--text-color);
-    font-weight: 450;
-}
-.card-item input{
-    display: block;
-    width: 95%;
-    background-color: var(--toggle1-color);
-    border-radius: 10px;
-    appearance: none;
-    margin: 2px 0;
-    margin-left: 8px;
-    cursor: pointer;
-}
-
-nav ul .mode .toggle-switch{
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-}
-
-.toggle-switch .label{
-    color: var(--text-color);
-    font-weight: 500;
-    padding-left: 22px;
-    font-size: 18px;
-}
-
-.toggle-switch .switch{
-    height: 24px;
-    position: relative;
-    width: 50px;
-    background-color: var(--toggle-color);
-    border-radius: 25px;
-    margin-left: 70px;
-}
-
-.switch::before{
-    content: '';
-    position: absolute;
-    height: 15px;
-    width: 15px;
-    border-radius: 50%;
-    top: 50%;
-    left: 5px;
-    transform: translateY(-50%);
-    background: var(--sidebar-color);
-    transition: var(--tran-03);
-}
-
-body.dark .switch::before{
-    left: 30px;  
-}
 

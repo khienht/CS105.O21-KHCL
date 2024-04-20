@@ -103,6 +103,13 @@ function init(){
 		folderviewgui.add(camera.position, "z", -600, 600).name("Camera Z").onChange(updateCamera);
     }
 
+    {
+        const foldercamgui = gui.addFolder("Camera");
+		foldercamgui.add(camera, "fov", 0, 180).name("FOV").onChange(updateCamera);
+		foldercamgui.add(camera, "near", 0.1, 100, 0.1).name("Near").onChange(updateCamera);
+		foldercamgui.add(camera, "far", 200, 2000, 10).name("Far").onChange(updateCamera);
+    }
+
     // Init plane for showing shadow
 	const planeGeo = new THREE.PlaneGeometry(size, size);
 	const planeMat = new THREE.MeshPhongMaterial({
@@ -126,7 +133,6 @@ function init(){
 
 //dark light mode
 function ChangeBackGround(id){
-    mesh = scene.getObjectByName("mesh1");
 
     if (id==1){ // dark
         color_bkgr = 0x000000;
@@ -135,12 +141,7 @@ function ChangeBackGround(id){
         color_bkgr = 0xffffff;
         // color_mat = 0x707070;
     }
-
-    if(mesh){
-        mesh.material.color.set(objColor);
-        mesh.material.needsUpdate = true;
-    }
-    material.color.set(objColor);
+    material.color.set(obj_material);
     
     scene.background = new THREE.Color(color_bkgr);
 }
@@ -265,23 +266,23 @@ function SetSurface(mat){
 
         switch (mat){
             case 1: //Point
-                mesh.material = new THREE.PointsMaterial({color: mesh.material.color, size: 0.5});
-                mesh = new THREE.Points(dummy_mesh.geometry, mesh.material);
+                material = new THREE.PointsMaterial({color: mesh.material.color, size: 0.8});
+                mesh = new THREE.Points(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 2: //Line
-                mesh.material = new THREE.LineBasicMaterial({ color: mesh.material.color });
-                mesh = new THREE.Line(dummy_mesh.geometry, mesh.material);
+                material = new THREE.LineBasicMaterial({ color: mesh.material.color });
+                mesh = new THREE.Line(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 3: //Solid
-                mesh.material = new THREE.MeshBasicMaterial({ color: mesh.material.color });
-                mesh = new THREE.Mesh(dummy_mesh.geometry, mesh.material);
+                material = new THREE.MeshBasicMaterial({ color: mesh.material.color });
+                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                mesh.material = new THREE.MeshBasicMaterial({ map: texture,  });
-                mesh = new THREE.Mesh(dummy_mesh.geometry, mesh.material);
+                material = new THREE.MeshBasicMaterial({ map: texture,  });
+                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
         }

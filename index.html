@@ -11,30 +11,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
-    
-    <title>Project 3D Simulation</title>
+    <link
+			rel="shortcut icon"
+			type="image/x-icon"
+			href="static/logo/uit_logo.png"
+		/>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Inter:wght@200;300;400;500;700&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="shortcut icon" type="image/x-icon" href="uit_logo.png" />
+    <title>3D Simulation</title>
 </head>
 <body class="dark">
-    <div class="btn">
-        <span class="fas fa-bars"></span>
-    </div>
 
     <nav class="sidebar">
-        <div class="head">
-            <div class="image-text">
-                <span class="'image">
-                    <img src="logo.png" alt="logo">
-                </span>
-            </div>
-
-            <div class="details">
-                <p class="name">3D Simulation</p>
-            </div>
-        </div>
         <ul>
                 <li>
-                    <a href="#" class="feat-btn">Geometry
-                        <span class="fas fa-caret-down first"></span>
+                    <a href="#" class="btn">
+                        <i class='bx bxs-shapes icon'></i>
+                        <span class="text">Geometry</span>
                     </a>
                     <ul class="submenu">
                         <li><a href="#" onclick="addMesh(1);">Box</a></li>
@@ -44,12 +43,13 @@
                         <li><a href="#" onclick="addMesh(5);">Torus</a></li>
                         <li><a href="#" onclick="addMesh(6);">Teapot</a></li>
                         <li><a href="#" onclick="addMesh(7);">Heart</a></li>
-                        <li><a href="#" onclick="removeGeometry();">Remove Geometry</a></li>
+                        <li><a href="#" onclick="removeGeometry();">Reset</a></li>
                     </ul>
                 </li>
                 <li>
-                    <a href="#" class="serv-btn">Surface
-                        <span class="fas fa-caret-down second"><span>
+                    <a href="#" class="serv-btn">
+                        <i class='bx bx-layer icon'></i>
+                        <span class="text">Surface<span>
                     </a>
                     <ul class="submenu">
                         <li><a href="#" onclick="SetSurface(1);">Point</a></li>
@@ -63,21 +63,23 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="#" class="light-btn">Light
-                        <span class="fas fa-caret-down third"></span>
+                    <a href="#" class="light-btn">
+                        <i class='bx bx-bulb icon'></i>
+                        <span class="text">Light</span>
                     </a>
                     <ul class="submenu">
-                        <li><a href="#" onclick="setLight(1);" >Ambient light</a></li>
-                        <li><a href="#" onclick="setLight(2);" >Hemisphere light</a></li>
-                        <li><a href="#" onclick="setLight(3);" >Directional Light</a></li>
-                        <li><a href="#" onclick="setLight(4);" >Pointlight</a></li>
-                        <li><a href="#" onclick="setLight(5);" >Spotlight</a></li>
-                        <li><a href="#" onclick="setLight(6);" >Remove Light</a></li>
+                        <li><a href="#" onclick="setLight(1);" >Ambient</a></li>
+                        <li><a href="#" onclick="setLight(2);" >Hemisphere</a></li>
+                        <li><a href="#" onclick="setLight(3);" >Directional</a></li>
+                        <li><a href="#" onclick="setLight(4);" >Point</a></li>
+                        <li><a href="#" onclick="setLight(5);" >Spot</a></li>
+                        <li><a href="#" onclick="setLight(6);" >Remove</a></li>
                     </ul>
                 </li>
                 <li> 
-                    <a href="#" class="animation-btn">Animation
-                        <span class="fas fa-caret-down four"></span>
+                    <a href="#" class="animation-btn">
+                        <i class='bx bxl-meta icon'></i>
+                        <span class="text">Animation</span>
                     </a>
                     <ul class="submenu">
                         <li ><a href="#" onclick="Animation1();">Rotate </a></li>
@@ -88,118 +90,37 @@
                     </ul>
                 </li>
                 <li>
-                    <button style="margin:10px; margin-right:18px; margin-left:30px; background-color:#695cfe; 
-                    font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                    onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Translate()" >
-
-                    <i class='fas fa-arrows-alt'></i>
-                </button>
-
-                <button style="margin:10px; margin-right:18px; margin-left:18px; background-color:#695cfe; 
-                font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Rotate()">
-
-                    <i class='fas fa-sync-alt'></i>
-                </button>
-
-                <button style="margin:0px; margin-right:0px; margin-left:14px; background-color:#695cfe; 
-                font-size:25px; border-radius:7px; padding:6px; cursor: pointer; border: none; color: #fff" 
-                onMouseOver="this.style.color='#000'" onMouseOut="this.style.color='#fff'" onclick="Scale()">
-
-                    <i class='fas fa-expand-arrows-alt'></i>
-                </button>
-            </li>
-            <li> 
-                <a href="#" class="camera-btn">Camera
-                    <span class="fas fa-caret-down five"></span>
-                </a>
-                <ul class="submenu">
-                    <li>
-                        <div class="card-item">
-                            <span class="valueSpanFOV">Field of view: 75</span>
-                            <input type="range" class="custom-range" id="customFOV" min="0" max="180" value="75">
-                        </div>
-                        <div class="card-item">
-                            <span class="valueSpanNear">Near: 0.1</span>
-                            <input type="range" class="custom-range" id="customNear" min="0.1" max="100" value="0.1">
-                        </div>
-                        <div class="card-item">
-                            <span class="valueSpanFar">Far: 1000</span>
-                            <input type="range" class="custom-range" id="customFar" min="200" max="2000" value="1000">
-                        </div>
-                    </li>
-                </ul>
-            </li>
-
-            <li class="mode">
-                <div class="toggle-switch">
-                    <span class="label">Dark Mode</span>
-                    <span class="switch"></span>
-                </div>
-            </li>
-            
-
+                    <a href="#" class="translate-btn" onclick="Translate()">
+                        <i class='bx bx-move icon'></i>
+                        <span class="text">Translate</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="rotate-btn" onclick="Rotate()">
+                        <i class='bx bx-sync icon'></i>
+                        <span class="text">Rotate</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="scale-btn" onclick="Scale()">
+                        <i class='bx bx-expand icon'></i>
+                        <span class="text">Scale</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="mode-btn">
+                        <i class='bx bx-sun icon' ></i>
+                        <span class="mode-text">Dark</span>
+                    </a>
+                </li>
         </ul>   
     </nav>
     <div class="gui-control" style="position: fixed; top: 0;;right: 0;"> <div id="my-gui-container"> </div> </div> 
     <div id="webgl"></div>
-    <script>
-        $(document).ready(function() {
-            const $valueSpanFOV = $('.valueSpanFOV');
-            const $valueSpanNear = $('.valueSpanNear');
-            const $valueSpanFar = $('.valueSpanFar');
-
-            const $valueFOV = $('#customFOV');
-            const $valueNear = $('#customNear');
-            const $valueFar = $('#customFar');
-
-            $valueSpanFOV.html("Field of view: " + $valueFOV.val());
-            $valueFOV.on('input change', () => {
-                $valueSpanFOV.html("Field of view: " + $valueFOV.val());
-                setFOV($valueFOV.val());
-            });
-
-            $valueSpanNear.html("Near: " + $valueNear.val());
-            $valueNear.on('input change', () => {
-                $valueSpanNear.html("Near: " + $valueNear.val());
-                setNear($valueNear.val());
-            });
-
-            $valueSpanFar.html("Far: " + $valueFar.val());
-            $valueFar.on('input change', () => {
-                $valueSpanFar.html("Far: " + $valueFar.val());
-                setFar($valueFar.val());
-            });
-        });
-
+    <script> 
         function Uploadimage() {
             document.getElementById("texture").click();
         };
-
-        const body = document.querySelector("body"),
-            sidebar = body.querySelector(".sidebar"),
-            modeSwitch = body.querySelector(".toggle-switch"),
-            modeText = body.querySelector(".label");
-            
-            modeSwitch.addEventListener("click", () =>{
-                body.classList.toggle("dark");
-                if(body.classList.contains("dark")){
-                    ChangeBackGround(1); //dark
-                }else{
-                    ChangeBackGround(0); //light
-                }
-            });
-
-        $('.toggle-switch').click(function () {
-            $(this).toggleClass("click");
-            // $('.sidebar').toggleClass("show");
-        });
-
-        $('.btn').click(function () {
-            $(this).toggleClass("click");
-            $('.sidebar').toggleClass("show");
-        });
-            
         //open submenu
         $('nav ul li').click(function () {
             var activeSibling = $(this).siblings().filter('.active');
@@ -228,6 +149,28 @@
         $('.submenu').click(function(event){
             event.stopPropagation();
         });
+
+        const body = document.querySelector("body"),
+            sidebar = body.querySelector(".sidebar"),
+            modeSwitch = body.querySelector(".mode-btn"),
+            modeText = body.querySelector(".mode-text");
+            icon = document.querySelector('.mode-btn .icon');
+            
+            modeSwitch.addEventListener("click", () =>{
+                body.classList.toggle("dark");
+                if(body.classList.contains("dark")){
+                    ChangeBackGround(1); //dark
+                    modeText.innerText = "Light";
+                    icon.classList.remove('bx-moon');
+                    icon.classList.add('bx-sun');
+                }else{
+                    ChangeBackGround(0); //light
+                    modeText.innerText = "Dark";
+                    icon.classList.remove('bx-sun');
+                    icon.classList.add('bx-moon');
+                }
+            });
+
     </script>
     
 </body>
