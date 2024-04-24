@@ -51,6 +51,10 @@ body.dark{
     margin-top: 10px;
 }
 
+.bxs-shapes {
+    margin-top: 0px;
+}
+
 .btn.click span:before {
     content: '\f00d';
 }
@@ -58,13 +62,17 @@ body.dark{
 .sidebar {
     position: fixed;
     width: 60px;
-    height: 55%;
+    /* height: 55%; */
+    height: 360px;
     background: var(--sidebar-color);
     /* box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);; */
     transition: left 0.4s ease;
     margin-top: 120px;
     margin-left: 10px;
     border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 nav ul li {
@@ -133,7 +141,7 @@ nav ul ul {
     position: absolute;
     display: none;
     left: 70px;
-    width: 90px;
+    width: 120px;
     background-color: transparent;
 }
 

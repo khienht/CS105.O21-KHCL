@@ -32,7 +32,7 @@ function init(){
     material = new THREE.MeshBasicMaterial({color: '#ffffff'});
 
     // Camera
-    var camera_x = 1;
+    var camera_x = 30;
     var camera_y = 50;
     var camera_z = 100;
     camera = new THREE.PerspectiveCamera(75,
@@ -41,8 +41,8 @@ function init(){
     camera.lookAt(scene.position);
     
     // Grid
-    var size = 500;
-    var divisions = 80;
+    var size = 300;
+    var divisions = 40;
     var gridHelper = new THREE.GridHelper(size,divisions, 0x888888);
     scene.add(gridHelper);
 
@@ -112,7 +112,8 @@ function init(){
 
     // Init plane for showing shadow
 	const planeGeo = new THREE.PlaneGeometry(size, size);
-	const planeMat = new THREE.MeshPhongMaterial({
+	const planeMat = new THREE.MeshStandardMaterial({
+        // color: "#15151e",
 		side: THREE.DoubleSide,
 	});
 	{
@@ -120,6 +121,7 @@ function init(){
 		meshPlane.receiveShadow = true;
 		meshPlane.rotation.x = -Math.PI / 2;
 	}
+    // gridHelper.add(meshPlane);
 
     // Light
 	light = new THREE.AmbientLight("#FFFFFF", 0.5);
@@ -223,6 +225,7 @@ function removeGeometry(){
         gui.remove(objColorGUI);
         transControls.detach();
         renderer.render(scene, camera);
+        RemoveAllAnimation();
     } else {
         console.log("Mesh không tồn tại trong scene.");
     }
