@@ -3,12 +3,11 @@ import { TeapotGeometry } from "three/addons/geometries/TeapotGeometry.js";
 import { GUI } from "./lib/dat.gui.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
-
 var scene, camera, renderer, mesh, texture;
 var transControls;
 
 var LightSwitch = false;
-var meshPlane,light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
+var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
 var gui;
 var objColor, objColorGUI, objcolorflag = false;
 
@@ -16,34 +15,34 @@ var transControls, color_bkgr, color_mat = 0xffffff;;
 var material;
 
 // Geometry
-var BoxG = new THREE.BoxGeometry(30,30,30,40,40,40);
-var ShereG = new THREE.SphereGeometry(20,20,20);
-var ConeG = new THREE.ConeGeometry(18,30,32,20);
-var CylinderG = new THREE.CylinderGeometry(15,15,30,30,5);
+var BoxG = new THREE.BoxGeometry(30, 30, 30, 40, 40, 40);
+var ShereG = new THREE.SphereGeometry(20, 20, 20);
+var ConeG = new THREE.ConeGeometry(18, 30, 32, 20);
+var CylinderG = new THREE.CylinderGeometry(15, 15, 30, 30, 5);
 var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
 var teapotGeo = new TeapotGeometry(16);
 
-var obj_material = new THREE.MeshPhongMaterial({color: '#ffffff'});
+var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
 
 init();
-function init(){
+function init() {
     scene = new THREE.Scene();
 
-    material = new THREE.MeshBasicMaterial({color: '#ffffff'});
+    material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
 
     // Camera
     var camera_x = 30;
     var camera_y = 50;
     var camera_z = 100;
     camera = new THREE.PerspectiveCamera(75,
-                                window.innerWidth/innerHeight,1,1000);
-    camera.position.set(camera_x,camera_y,camera_z);
+        window.innerWidth / innerHeight, 1, 1000);
+    camera.position.set(camera_x, camera_y, camera_z);
     camera.lookAt(scene.position);
-    
+
     // Grid
     var size = 300;
     var divisions = 40;
-    var gridHelper = new THREE.GridHelper(size,divisions, 0x888888);
+    var gridHelper = new THREE.GridHelper(size, divisions, 0x888888);
     scene.add(gridHelper);
 
     renderer = new THREE.WebGLRenderer();
@@ -66,23 +65,23 @@ function init(){
     // Resize handler
     function onWindowResize() {
         const WIDTH = window.innerWidth;
-		const HEIGHT = window.innerHeight;
+        const HEIGHT = window.innerHeight;
 
         camera.aspect = WIDTH / HEIGHT;
-		camera.updateProjectionMatrix();
+        camera.updateProjectionMatrix();
 
-		renderer.setSize(WIDTH, HEIGHT);
+        renderer.setSize(WIDTH, HEIGHT);
     }
 
     //GUI control
     {
-		gui = new GUI({
-			autoPlace: false
-		});
-		let customContainer = document.getElementById("my-gui-container");
-		customContainer.appendChild(gui.domElement);
+        gui = new GUI({
+            autoPlace: false
+        });
+        let customContainer = document.getElementById("my-gui-container");
+        customContainer.appendChild(gui.domElement);
         gui.updateDisplay();
-	}
+    }
 
     // Thay đổi nền background bằng gui control
     // color_bkgr = {
@@ -97,75 +96,75 @@ function init(){
     // View gui controls
     {
         const folderviewgui = gui.addFolder("View");
-		// folderviewgui.open();
-		folderviewgui.add(camera.position, "x", -600, 600).name("Camera X").onChange(updateCamera);
-		folderviewgui.add(camera.position, "y", -600, 600).name("Camera Y").onChange(updateCamera);
-		folderviewgui.add(camera.position, "z", -600, 600).name("Camera Z").onChange(updateCamera);
+        // folderviewgui.open();
+        folderviewgui.add(camera.position, "x", -600, 600).name("Camera X").onChange(updateCamera);
+        folderviewgui.add(camera.position, "y", -600, 600).name("Camera Y").onChange(updateCamera);
+        folderviewgui.add(camera.position, "z", -600, 600).name("Camera Z").onChange(updateCamera);
     }
 
     {
         const foldercamgui = gui.addFolder("Camera");
-		foldercamgui.add(camera, "fov", 0, 180).name("FOV").onChange(updateCamera);
-		foldercamgui.add(camera, "near", 0.1, 100, 0.1).name("Near").onChange(updateCamera);
-		foldercamgui.add(camera, "far", 200, 2000, 10).name("Far").onChange(updateCamera);
+        foldercamgui.add(camera, "fov", 0, 180).name("FOV").onChange(updateCamera);
+        foldercamgui.add(camera, "near", 0.1, 100, 0.1).name("Near").onChange(updateCamera);
+        foldercamgui.add(camera, "far", 200, 2000, 10).name("Far").onChange(updateCamera);
     }
 
     // Init plane for showing shadow
-	const planeGeo = new THREE.PlaneGeometry(size, size);
-	const planeMat = new THREE.MeshStandardMaterial({
+    const planeGeo = new THREE.PlaneGeometry(size, size);
+    const planeMat = new THREE.MeshStandardMaterial({
         // color: "#15151e",
-		side: THREE.DoubleSide,
-	});
-	{
-		meshPlane = new THREE.Mesh(planeGeo, planeMat);
-		meshPlane.receiveShadow = true;
-		meshPlane.rotation.x = -Math.PI / 2;
-	}
+        side: THREE.DoubleSide,
+    });
+    {
+        meshPlane = new THREE.Mesh(planeGeo, planeMat);
+        meshPlane.receiveShadow = true;
+        meshPlane.rotation.x = -Math.PI / 2;
+    }
     // gridHelper.add(meshPlane);
 
     // Light
-	light = new THREE.AmbientLight("#FFFFFF", 0.5);
-	scene.add(light);
+    light = new THREE.AmbientLight("#FFFFFF", 0.5);
+    scene.add(light);
 
     window.addEventListener('resize', onWindowResize, false);
     controls.update();
     render();
-    
+
 }
 
 //dark light mode
-function ChangeBackGround(id){
+function ChangeBackGround(id) {
 
-    if (id==1){ // dark
+    if (id == 1) { // dark
         color_bkgr = 0x000000;
         // color_mat = 0xffffff;
-    }else{ // light
+    } else { // light
         color_bkgr = 0xffffff;
         // color_mat = 0x707070;
     }
     material.color.set(obj_material);
-    
+
     scene.background = new THREE.Color(color_bkgr);
 }
 window.ChangeBackGround = ChangeBackGround;
 
-function render(){
+function render() {
     requestAnimationFrame(render);
-	renderer.render(scene, camera);
+    renderer.render(scene, camera);
 }
 
 function updateCamera() {
-	camera.updateProjectionMatrix();
-	render();
+    camera.updateProjectionMatrix();
+    render();
 }
 
 //draw geometry
-function addMesh(id){
+function addMesh(id) {
     mesh = scene.getObjectByName("mesh1");
     scene.remove(mesh);
 
-    switch(id){
-        case 1: 
+    switch (id) {
+        case 1:
             mesh = new THREE.Mesh(BoxG, obj_material);
             break;
         case 2:
@@ -183,21 +182,22 @@ function addMesh(id){
         case 6:
             mesh = new THREE.Mesh(teapotGeo, obj_material);
             break;
-        case 7:{
-            const extrudeSettings = { 
-                amount: 2, 
-                bevelEnable: true, 
-                bevelSegments: 2, 
-                steps: 2, 
-                bevelSize: 1, 
-                bevelThickness: 1 };
+        case 7: {
+            const extrudeSettings = {
+                amount: 2,
+                bevelEnable: true,
+                bevelSegments: 2,
+                steps: 2,
+                bevelSize: 1,
+                bevelThickness: 1
+            };
             var heart = new THREE.ExtrudeGeometry(getHeart(), extrudeSettings);
             mesh = new THREE.Mesh(heart, obj_material);
             break;
-        }       
+        }
     }
 
-    if (objcolorflag==false) {
+    if (objcolorflag == false) {
         // Thêm objColorGUI vào GUI
         objColor = { color: mesh.material.color.getHex() };
         objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
@@ -206,9 +206,9 @@ function addMesh(id){
             mesh.material.color.setHex(value);
             material.color.setHex(value);
         });
-        objcolorflag= true;
+        objcolorflag = true;
     }
-    
+
     mesh.name = "mesh1";
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -219,8 +219,8 @@ function addMesh(id){
 }
 window.addMesh = addMesh;
 
-function removeGeometry(){
-	if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag== true ) {
+function removeGeometry() {
+    if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag == true) {
         scene.remove(mesh);
         gui.remove(objColorGUI);
         transControls.detach();
@@ -229,7 +229,7 @@ function removeGeometry(){
     } else {
         console.log("Mesh không tồn tại trong scene.");
     }
-	objcolorflag = false;
+    objcolorflag = false;
 }
 window.removeGeometry = removeGeometry;
 
@@ -248,28 +248,28 @@ function getHeart() {
     return heartShape;
 }
 
-function CloneMesh(dummy_mesh){
+function CloneMesh(dummy_mesh) {
     mesh.name = dummy_mesh.name;
     mesh.position.set(dummy_mesh.position.x, dummy_mesh.position.y, dummy_mesh.position.z);
     mesh.rotation.set(dummy_mesh.rotation.x, dummy_mesh.rotation.y, dummy_mesh.rotation.z);
     mesh.scale.set(dummy_mesh.scale.x, dummy_mesh.scale.y, dummy_mesh.scale.z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    
+
     scene.add(mesh);
     transform(mesh);
 }
 
 // change surface
-function SetSurface(mat){
+function SetSurface(mat) {
     mesh = scene.getObjectByName("mesh1");
-    if (mesh){
+    if (mesh) {
         const dummy_mesh = mesh.clone();
         scene.remove(mesh);
 
-        switch (mat){
+        switch (mat) {
             case 1: //Point
-                material = new THREE.PointsMaterial({color: mesh.material.color, size: 0.8});
+                material = new THREE.PointsMaterial({ color: mesh.material.color, size: 0.8 });
                 mesh = new THREE.Points(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
@@ -284,7 +284,7 @@ function SetSurface(mat){
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                material = new THREE.MeshBasicMaterial({ map: texture,  });
+                material = new THREE.MeshBasicMaterial({ map: texture, });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
@@ -324,7 +324,7 @@ function transform(mesh) {
     transControls.attach(mesh);
     scene.add(transControls);
     console.log(transControls);
-    window.addEventListener('keydown', function(event) {
+    window.addEventListener('keydown', function (event) {
         switch (event.keyCode) {
             case 84: // T
                 Translate();
@@ -348,8 +348,8 @@ function transform(mesh) {
     });
 }
 
-function removeLight(){
-	if (LightSwitch){
+function removeLight() {
+    if (LightSwitch) {
         if (plFolder && gui.__folders.hasOwnProperty(plFolder.name)) {
             gui.removeFolder(plFolder);
         }
@@ -365,20 +365,20 @@ function removeLight(){
         if (slFolder && gui.__folders.hasOwnProperty(slFolder.name)) {
             gui.removeFolder(slFolder);
         }
-	}
-	scene.remove(helper);
-	scene.remove(light);
+    }
+    scene.remove(helper);
+    scene.remove(light);
     scene.remove(meshPlane);
 }
 
 
 function setLight(LightID) {
-	if (LightSwitch){
-		removeLight();
-	}
-	switch (LightID) {
-		case 1:	//Ambient light
-			light = new THREE.AmbientLight(0xffffff, 0.5);
+    if (LightSwitch) {
+        removeLight();
+    }
+    switch (LightID) {
+        case 1:	//Ambient light
+            light = new THREE.AmbientLight(0xffffff, 0.5);
             // set up ambient light gui
             {
                 const alSettings = { color: light.color.getHex() };
@@ -386,14 +386,14 @@ function setLight(LightID) {
                 abFolder.add(light, 'visible');
                 abFolder.add(light, 'intensity', 0, 3, 0.1);
                 abFolder
-                .addColor(alSettings, 'color')
-                .onChange((value) => light.color.set(value));
+                    .addColor(alSettings, 'color')
+                    .onChange((value) => light.color.set(value));
                 abFolder.open();
             }
 
             scene.add(light);
             LightSwitch = true;
-			break;
+            break;
 
         case 2: //Hemisphere Light
             light = new THREE.HemisphereLight(0xf0e424, 0xd41384, 3);
@@ -423,7 +423,7 @@ function setLight(LightID) {
             LightSwitch = true;
             scene.add(light);
             break;
-        
+
         case 3: //Directional light
             light = new THREE.DirectionalLight(0xffffff, 1);
             light.position.set(-5, 60, -4);
@@ -439,37 +439,37 @@ function setLight(LightID) {
                 dlFolder.add(light, 'intensity', 0, 5, 0.1);
                 dlFolder.add(light.position, 'y', 1, 100, 5);
                 dlFolder.add(light, 'castShadow');
-                dlFolder.add(light.position, 'x', -100, 100,5);
-                dlFolder.add(light.position, 'y', -10, 100,5);
-                dlFolder.add(light.position, 'z', -100, 100,5);
+                dlFolder.add(light.position, 'x', -100, 100, 5);
+                dlFolder.add(light.position, 'y', -10, 100, 5);
+                dlFolder.add(light.position, 'z', -100, 100, 5);
                 dlFolder
-                .addColor(dlSettings, 'color')
-                .onChange((value) => light.color.set(value));
+                    .addColor(dlSettings, 'color')
+                    .onChange((value) => light.color.set(value));
                 dlFolder.open();
             }
-            
+
             {
-                light.shadow.mapSize.width = 1024; 
-                light.shadow.mapSize.height = 1024; 
+                light.shadow.mapSize.width = 1024;
+                light.shadow.mapSize.height = 1024;
                 light.shadow.camera.left = -200;
                 light.shadow.camera.right = 200;
                 light.shadow.camera.top = 200;
                 light.shadow.camera.bottom = -200;
-                light.shadow.camera.near = 0.5; 
-                light.shadow.camera.far = 500; 
+                light.shadow.camera.near = 0.5;
+                light.shadow.camera.far = 500;
                 light.shadow.bias = 0.0001;
                 light.target.position.set(-5, 0, 0);
             }
-			
-			LightSwitch = true;
+
+            LightSwitch = true;
             scene.add(light);
             scene.add(light.target);
             scene.add(helper);
             break;
-		case 4: //Pointlight
-            light = new THREE.PointLight(0xffffff, 5, 100,0);
+        case 4: //Pointlight
+            light = new THREE.PointLight(0xffffff, 5, 100, 0);
             light.position.set(0, 60, 0);
-			light.castShadow = true;
+            light.castShadow = true;
 
             {
                 light.shadow.camera.near = 0.1;
@@ -478,7 +478,7 @@ function setLight(LightID) {
                 light.shadow.mapSize.height = 1024;
                 light.shadow.bias = 0.0001;
             }
-            
+
             helper = new THREE.PointLightHelper(light, 3);
             // set up pointlight gui
             {
@@ -488,23 +488,23 @@ function setLight(LightID) {
                 };
                 plFolder = gui.addFolder('Point light');
                 plFolder.add(light, 'intensity', 0, 10, 1);
-                plFolder.add(light,'distance',0,200,10);
-                plFolder.add(light.position, 'x', -300, 300,5);
-                plFolder.add(light.position, 'y', -10, 100,5);
-                plFolder.add(light.position, 'z', -300, 300,5);
+                plFolder.add(light, 'distance', 0, 200, 10);
+                plFolder.add(light.position, 'x', -300, 300, 5);
+                plFolder.add(light.position, 'y', -10, 100, 5);
+                plFolder.add(light.position, 'z', -300, 300, 5);
                 plFolder.add(light, 'castShadow');
                 plFolder
-                .addColor(plSettings, 'color')
-                .onChange((value) => light.color.set(value));
+                    .addColor(plSettings, 'color')
+                    .onChange((value) => light.color.set(value));
                 plFolder.open();
             }
-            
+
             scene.add(light);
             scene.add(helper);
             LightSwitch = true;
-			break;
-		case 5:	//Spotlight
-            light = new THREE.SpotLight(0xffffff, 5, 100, Math.PI/1.5, 0, 0);
+            break;
+        case 5:	//Spotlight
+            light = new THREE.SpotLight(0xffffff, 5, 100, Math.PI / 1.5, 0, 0);
             light.name = "SpotLight";
             light.position.set(5, 60, 5);
             light.castShadow = true;
@@ -519,32 +519,32 @@ function setLight(LightID) {
                 slFolder = gui.addFolder('Spotlight');
                 slFolder.add(light, 'intensity', 0, 10, 1);
                 slFolder.add(light, 'angle', 0, Math.PI);
-                slFolder.add(light, 'penumbra',0,1,0.1);
-                slFolder.add(light, 'distance', 0, 200,10);
+                slFolder.add(light, 'penumbra', 0, 1, 0.1);
+                slFolder.add(light, 'distance', 0, 200, 10);
                 slFolder.add(light.position, 'x', -300, 300, 5);
                 slFolder.add(light.position, 'y', -10, 100, 5);
                 slFolder.add(light.position, 'z', -300, 300, 5);
                 slFolder.add(light, 'castShadow');
                 slFolder
-                .addColor(slSettings, 'color')
-                .onChange((value) => light.color.set(value));
+                    .addColor(slSettings, 'color')
+                    .onChange((value) => light.color.set(value));
                 slFolder.open();
             }
-            
+
             scene.add(light);
             scene.add(helper);
-			LightSwitch = true;
-			break;
-		case 6:
-			LightSwitch = false;
-			break;
-	}
+            LightSwitch = true;
+            break;
+        case 6:
+            LightSwitch = false;
+            break;
+    }
 
-	if(LightSwitch){
+    if (LightSwitch) {
         meshPlane.receiveShadow = true;
-		scene.add(meshPlane);
-	}
-	render();
+        scene.add(meshPlane);
+    }
+    render();
 }
 window.setLight = setLight;
 // update camera
@@ -577,7 +577,7 @@ var id_animation1, id_animation2, id_animation3;
 
 function Animation1() {
     const current_time = Date.now();
-	const delta_time = current_time - time;
+    const delta_time = current_time - time;
 
     time = current_time;
 
@@ -587,7 +587,7 @@ function Animation1() {
     mesh.rotation.x += delta_time * 0.0005;
     mesh.rotation.y += delta_time * 0.002;
     mesh.rotation.z += delta_time * 0.001;
-    
+
     console.log("Animation 1");
     id_animation1 = requestAnimationFrame(Animation1);
     renderer.render(scene, camera);
@@ -602,7 +602,7 @@ function Animation2() {
     cancelAnimationFrame(id_animation3);
     cancelAnimationFrame(id_animation2);
     cancelAnimationFrame(id_animation1);
-	// Xoay đối tượng
+    // Xoay đối tượng
     mesh.rotation.y += rotationSpeed;
 
     // Thu/phóng đối tượng
@@ -627,21 +627,21 @@ function Animation2() {
 }
 window.Animation2 = Animation2
 
-var alpha=0;
-function Animation3(){
+var alpha = 0;
+function Animation3() {
     cancelAnimationFrame(id_animation3);
     cancelAnimationFrame(id_animation2);
     cancelAnimationFrame(id_animation1);
 
-    alpha += Math.PI * 0.005; 
+    alpha += Math.PI * 0.005;
     if (alpha >= Math.PI * 2) alpha = 0; // Đảm bảo alpha không vượt quá 2π
 
     mesh.position.x = Math.sin(alpha) * 10;
     mesh.position.z = Math.cos(alpha) * 10;
-    
-    const rotationSpeed = 0.02; 
+
+    const rotationSpeed = 0.02;
     mesh.rotation.y += rotationSpeed;
-    mesh.rotation.z += rotationSpeed * 0.5; 
+    mesh.rotation.z += rotationSpeed * 0.5;
 
     console.log("Animation 3");
     id_animation3 = requestAnimationFrame(Animation3);
