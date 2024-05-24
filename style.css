@@ -8,18 +8,18 @@
 }
 
 :root{
-    --body-color: #e4e9f7;
-    --sidebar-color: rgba(0, 0, 0, 0.2);
-    --primary-color: #695cfe;
-    --primary-color-light: #f6f5ff;
-    --toggle-color: #bababa;
+    --body-color: #18191a;
+    --sidebar-color: rgba(255, 255, 255, 0.1);
+    --primary-color: #03ade2;
+    --primary-color-light: #ccc;
+    --toggle-color: white;
     --toggle1-color:rgb(197, 196, 196);
-    --text-color: black;
+    --text-color: white;
     --title-color: white;
-    --text_sub-color: black;
-    --submenu-color: rgba(0, 0, 0, 0.2);
-    --submenu-color1: rgba(105, 92, 254, 0.5);
-  
+    --text_sub-color: white;
+    --submenu-color: rgba(255, 255, 255, 0.1);
+    --submenu-color1: #03ade2;
+
     --tran-02: all 0.2s ease;
     --tran-03: all 0.3s ease;
     --tran-04: all 0.4s ease;
@@ -33,17 +33,17 @@ body{
 }
 
 body.dark{
-    --body-color: #18191a;
-    --sidebar-color: rgba(255, 255, 255, 0.1);
-    --primary-color: #695cfe;
-    --primary-color-light: #ccc;
-    --toggle-color: white;
+    --body-color: #e4e9f7;
+    --sidebar-color: rgba(0, 0, 0, 0.2);
+    --primary-color: #003285;
+    --primary-color-light: #f6f5ff;
+    --toggle-color: #bababa;
     --toggle1-color:rgb(197, 196, 196);
     --text-color: white;
     --title-color: white;
-    --text_sub-color: black;
-    --submenu-color: rgba(255, 255, 255, 0.25);
-    --submenu-color1: rgba(105, 92, 254, 0.5);
+    --text_sub-color: white;
+    --submenu-color: rgba(0, 0, 0, 0.2);
+    --submenu-color1: #003285; 
 }
 
 .icon{
@@ -62,10 +62,8 @@ body.dark{
 .sidebar {
     position: fixed;
     width: 60px;
-    /* height: 55%; */
     height: 360px;
     background: var(--sidebar-color);
-    /* box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);; */
     transition: left 0.4s ease;
     margin-top: 120px;
     margin-left: 10px;
@@ -134,7 +132,6 @@ nav ul li.active a span {
 nav ul li a:hover .icon {
     color: var(--primary-color);
 }
-
 
 /* sub menu */
 nav ul ul {

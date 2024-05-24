@@ -25,10 +25,22 @@ var teapotGeo = new TeapotGeometry(16);
 var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
 
 init();
-function init() {
+async function init() {
     scene = new THREE.Scene();
 
     material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+
+    // Setup scene
+    const environment = await new THREE.CubeTextureLoader().loadAsync([
+        "diamond/skybox/Box_Right.bmp",
+        "diamond/skybox/Box_Left.bmp",
+        "diamond/skybox/Box_Top.bmp",
+        "diamond/skybox/Box_Bottom.bmp",
+        "diamond/skybox/Box_Front.bmp",
+        "diamond/skybox/Box_Back.bmp"
+    ]);
+    environment.encoding = THREE.sRGBEncoding;
+    scene.background = environment;
 
     // Camera
     var camera_x = 30;
@@ -42,7 +54,7 @@ function init() {
     // Grid
     var size = 300;
     var divisions = 40;
-    var gridHelper = new THREE.GridHelper(size, divisions, 0x888888);
+    var gridHelper = new THREE.GridHelper(size, divisions, 0xffffff ,0xffffff);
     scene.add(gridHelper);
 
     renderer = new THREE.WebGLRenderer();
@@ -83,16 +95,6 @@ function init() {
         gui.updateDisplay();
     }
 
-    // Thay đổi nền background bằng gui control
-    // color_bkgr = {
-    //     color: 0x000000 
-    // };
-    // // Thêm GUI control cho màu nền
-    // var bgFolder = gui.addFolder('Background'); // Tạo một folder mới trong GUI
-    // bgFolder.addColor(color_bkgr, 'color').name('Color').onChange(function(value) {
-    //     renderer.setClearColor(value); // Đặt màu nền của renderer
-    // });
-
     // View gui controls
     {
         const folderviewgui = gui.addFolder("View");
@@ -131,22 +133,90 @@ function init() {
     render();
 
 }
+function create_background_point() {
+	const vertices = [];
+	const num_points = 30000;
+	for (let i = 0; i < num_points; i++) {
+		const x = THREE.MathUtils.randFloatSpread(2000);
+		const y = THREE.MathUtils.randFloatSpread(2000);
+		const z = THREE.MathUtils.randFloatSpread(2000);
 
+		vertices.push(x, y, z);
+	}
+
+	const background_geometry = new THREE.BufferGeometry();
+	background_geometry.setAttribute(
+		"position",
+		new THREE.Float32BufferAttribute(vertices, 3)
+	);
+
+	const background_material = new THREE.PointsMaterial({ color: 0x888888 });
+	const background_points = new THREE.Points(
+		background_geometry,
+		background_material
+	);
+	return background_points;
+}
+
+let currentEnvironment = null; // Biến lưu trữ texture nền hiện tại
 //dark light mode
-function ChangeBackGround(id) {
+async function ChangeBackGround(id) {
 
     if (id == 1) { // dark
-        color_bkgr = 0x000000;
-        // color_mat = 0xffffff;
+        var bkg = scene.getObjectByName("bkg");
+        scene.remove(bkg);
+
+        if (currentEnvironment) {
+            currentEnvironment.dispose();
+        }
+
+        const environment = await new THREE.CubeTextureLoader().loadAsync([
+            "diamond/skybox/Box_Right.bmp",
+            "diamond/skybox/Box_Left.bmp",
+            "diamond/skybox/Box_Top.bmp",
+            "diamond/skybox/Box_Bottom.bmp",
+            "diamond/skybox/Box_Front.bmp",
+            "diamond/skybox/Box_Back.bmp"
+        ]);
+        environment.encoding = THREE.sRGBEncoding;
+        
+        currentEnvironment = environment;
+        scene.background = environment;
+        
     } else { // light
-        color_bkgr = 0xffffff;
+        // color_bkgr = 0xffffff;
+        // color_bkgr = 0x000000;
+        if (currentEnvironment) {
+            currentEnvironment.dispose();
+            currentEnvironment = null;
+        }
+        scene.background = new THREE.Color(0x000000);
+
+        var background_points = create_background_point();
+        background_points.name ='bkg'
+        scene.add(background_points);
+        // color_mat = 0xffffff;
         // color_mat = 0x707070;
     }
     material.color.set(obj_material);
 
-    scene.background = new THREE.Color(color_bkgr);
+    // scene.background = new THREE.Color(color_bkgr);
 }
+// function ChangeBackGround(id) {
+
+//     if (id == 1) { // dark
+//         color_bkgr = 0x000000;
+//         // color_mat = 0xffffff;
+//     } else { // light
+//         color_bkgr = 0xffffff;
+//         // color_mat = 0x707070;
+//     }
+//     material.color.set(obj_material);
+
+//     scene.background = new THREE.Color(color_bkgr);
+// }
 window.ChangeBackGround = ChangeBackGround;
+
 
 function render() {
     requestAnimationFrame(render);
@@ -370,7 +440,6 @@ function removeLight() {
     scene.remove(light);
     scene.remove(meshPlane);
 }
-
 
 function setLight(LightID) {
     if (LightSwitch) {
