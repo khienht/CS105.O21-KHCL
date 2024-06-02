@@ -22,8 +22,8 @@ var CylinderG = new THREE.CylinderGeometry(15, 15, 30, 30, 5);
 var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
 var teapotGeo = new TeapotGeometry(16);
 
-var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
-
+// var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
+var obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
 init();
 async function init() {
     scene = new THREE.Scene();
@@ -123,10 +123,6 @@ async function init() {
         meshPlane.rotation.x = -Math.PI / 2;
     }
     // gridHelper.add(meshPlane);
-
-    // Light
-    light = new THREE.AmbientLight("#FFFFFF", 0.5);
-    scene.add(light);
 
     window.addEventListener('resize', onWindowResize, false);
     controls.update();
@@ -419,22 +415,25 @@ function transform(mesh) {
 }
 
 function removeLight() {
-    if (LightSwitch) {
-        if (plFolder && gui.__folders.hasOwnProperty(plFolder.name)) {
-            gui.removeFolder(plFolder);
-        }
-        if (hemisphereFolder && gui.__folders.hasOwnProperty(hemisphereFolder.name)) {
-            gui.removeFolder(hemisphereFolder);
-        }
-        if (abFolder && gui.__folders.hasOwnProperty(abFolder.name)) {
-            gui.removeFolder(abFolder);
-        }
-        if (dlFolder && gui.__folders.hasOwnProperty(dlFolder.name)) {
-            gui.removeFolder(dlFolder);
-        }
-        if (slFolder && gui.__folders.hasOwnProperty(slFolder.name)) {
-            gui.removeFolder(slFolder);
-        }
+    if(scene.getObjectByName("mesh1")){
+        mesh = scene.getObjectByName("mesh1");
+        obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+        mesh.material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+    }
+    if (plFolder && gui.__folders.hasOwnProperty(plFolder.name)) {
+        gui.removeFolder(plFolder);
+    }
+    if (hemisphereFolder && gui.__folders.hasOwnProperty(hemisphereFolder.name)) {
+        gui.removeFolder(hemisphereFolder);
+    }
+    if (abFolder && gui.__folders.hasOwnProperty(abFolder.name)) {
+        gui.removeFolder(abFolder);
+    }
+    if (dlFolder && gui.__folders.hasOwnProperty(dlFolder.name)) {
+        gui.removeFolder(dlFolder);
+    }
+    if (slFolder && gui.__folders.hasOwnProperty(slFolder.name)) {
+        gui.removeFolder(slFolder);
     }
     scene.remove(helper);
     scene.remove(light);
@@ -610,6 +609,10 @@ function setLight(LightID) {
     }
 
     if (LightSwitch) {
+        if(scene.getObjectByName("mesh1")){
+            mesh = scene.getObjectByName("mesh1");
+            obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
+            mesh.material = new THREE.MeshPhongMaterial({ color: '#ffffff' });}
         meshPlane.receiveShadow = true;
         scene.add(meshPlane);
     }

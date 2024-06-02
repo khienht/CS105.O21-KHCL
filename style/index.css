@@ -1,0 +1,32 @@
+:root{
+    --body-color: #18191ae9;
+}
+
+body{
+    background-color: var(--body-color);
+}
+section {
+    display: flex;
+    justify-content: center;
+    gap: 100px;
+    flex-direction: row;
+    padding: 70px;
+}
+div {
+    width: 500px; 
+}
+a {
+    width: 100%;
+    text-decoration: inherit;
+    color: white;
+}
+a h4 {
+    font-size: 25px;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+a img {
+    width: 100%;
+    border: 5px solid black;
+}

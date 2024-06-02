@@ -5,184 +5,44 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./style.css">
-    <!-- Boxicons CSS -->
+    <link rel="stylesheet" href="./style/index.css">
+
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="static/logo/uit_logo.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
         href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Inter:wght@200;300;400;500;700&display=swap"
         rel="stylesheet" />
-    <link rel="shortcut icon" type="image/x-icon" href="uit_logo.png" />
+    <link rel="shortcut icon" type="image/x-icon" href="./img/uit_logo.png" />
     <title>3D Simulation</title>
 </head>
 
-<body class="dark">
-
-    <nav class="sidebar">
-        <ul>
-            <li>
-                <a href="#" class="btn">
-                    <i class='bx bxs-shapes icon'></i>
-                    <span class="text">Geometry</span>
-                </a>
-                <ul class="submenu">
-                    <li><a href="#" onclick="addMesh(1);">Box</a></li>
-                    <li><a href="#" onclick="addMesh(2);">Sphere</a></li>
-                    <li><a href="#" onclick="addMesh(3);">Cone</a></li>
-                    <li><a href="#" onclick="addMesh(4);">Cylinder</a></li>
-                    <li><a href="#" onclick="addMesh(5);">Torus</a></li>
-                    <li><a href="#" onclick="addMesh(6);">Teapot</a></li>
-                    <li><a href="#" onclick="addMesh(7);">Heart</a></li>
-                    <li><a href="#" onclick="removeGeometry();">Reset</a></li>
-                </ul>
-            </li>
-            <li>
-                <a href="#" class="serv-btn">
-                    <i class='bx bx-layer icon'></i>
-                    <span class="text">Surface<span>
-                </a>
-                <ul class="submenu">
-                    <li><a href="#" onclick="SetSurface(1);">Point</a></li>
-                    <li><a href="#" onclick="SetSurface(2);">Line</a></li>
-                    <li><a href="#" onclick="SetSurface(3);">Solid</a></li>
-                    <li>
-                        <input type="file" accept="image/*" id="texture" style="display: none;"
-                            onchange="ImgTexture(window.URL.createObjectURL(this.files[0]))" />
-                        <a href="#" name="button" onclick="Uploadimage();">Texture</a>
-                    </li>
-                </ul>
-            </li>
-            <li>
-                <a href="#" class="light-btn">
-                    <i class='bx bx-bulb icon'></i>
-                    <span class="text">Light</span>
-                </a>
-                <ul class="submenu">
-                    <li><a href="#" onclick="setLight(1);">Ambient</a></li>
-                    <li><a href="#" onclick="setLight(2);">Hemisphere</a></li>
-                    <li><a href="#" onclick="setLight(3);">Directional</a></li>
-                    <li><a href="#" onclick="setLight(4);">Point</a></li>
-                    <li><a href="#" onclick="setLight(5);">Spot</a></li>
-                    <li><a href="#" onclick="setLight(6);">Remove</a></li>
-                </ul>
-            </li>
-            <li>
-                <a href="#" class="animation-btn">
-                    <i class='bx bxl-meta icon'></i>
-                    <span class="text">Animation</span>
-                </a>
-                <ul class="submenu">
-                    <li><a href="#" onclick="Animation1();">Rotate </a></li>
-
-                    <li><a href="#" onclick="Animation2();">In & Out</a></li>
-                    <li><a href="#" onclick="Animation3();">Rotate & Move</a></li>
-                    <li><a href="#" onclick="RemoveAllAnimation();">Reset</a></li>
-                </ul>
-            </li>
-            <li>
-                <a href="#" class="translate-btn" onclick="Translate()">
-                    <i class='bx bx-move icon'></i>
-                    <span class="text">Translate</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="rotate-btn" onclick="Rotate()">
-                    <i class='bx bx-sync icon'></i>
-                    <span class="text">Rotate</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="scale-btn" onclick="Scale()">
-                    <i class='bx bx-expand icon'></i>
-                    <span class="text">Scale</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="mode-btn">
-                    <i class='bx bx-sun icon'></i>
-                    <span class="mode-text">Dark</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
-    <div class="gui-control" style="position: fixed; top: 0;;right: 0;">
-        <div id="my-gui-container"> </div>
-    </div>
-    <div id="webgl"></div>
-    <script>
-        function Uploadimage() {
-            document.getElementById("texture").click();
-        };
-        //open submenu
-        $('nav ul li').click(function () {
-            var activeSibling = $(this).siblings().filter('.active');
-            activeSibling.each(function (index, element) {
-                var sibling = $(element);
-                sibling.find('.fas').toggleClass("rotate");
-            });
-
-            $(this).siblings().find('.submenu').slideUp();
-            var isOpen = $(this).find('.submenu').is(':visible');
-
-            // $('.submenu').slideUp();
-
-            if (!isOpen) {
-                $(this).find('.submenu').slideDown();
-                $(this).find('.fas').toggleClass("rotate");
-                $(this).addClass("active").siblings().removeClass("active");
-            } else {
-                $(this).find('.fas').toggleClass("rotate");
-                $(this).find('.submenu').slideUp();
-                $(this).removeClass("active");
-            }
-
-        });
-
-        $('.submenu').click(function (event) {
-            event.stopPropagation();
-        });
-
-        const body = document.querySelector("body"),
-            sidebar = body.querySelector(".sidebar"),
-            modeSwitch = body.querySelector(".mode-btn"),
-            modeText = body.querySelector(".mode-text");
-        icon = document.querySelector('.mode-btn .icon');
-
-        modeSwitch.addEventListener("click", () => {
-            body.classList.toggle("dark");
-            if (body.classList.contains("dark")) {
-                ChangeBackGround(1); //dark
-                modeText.innerText = "Light";
-                icon.classList.remove('bx-moon');
-                icon.classList.add('bx-sun');
-            } else {
-                ChangeBackGround(0); //light
-                modeText.innerText = "Dark";
-                icon.classList.remove('bx-sun');
-                icon.classList.add('bx-moon');
-            }
-        });
-
-    </script>
-
+<body>
+    <section class="object">
+        <div class="3D">
+            <a href="object.html">
+                <h4>3D Shape</h4>
+                <img src="img/object.jpg" alt="object-img">
+            </a>
+        </div>
+        <div class="diamond">
+            <a href="diamond.html">
+                <h4>Diamond</h4>
+                <img src="img/diamond.png" alt="diamond-img">
+            </a>
+        </div>
+        <div class="model">
+            <a href="model.html">
+                <h4>Load Model</h4>
+                <img src="img/model.png" alt="model-img">
+            </a>
+        </div>
+    </section>
 </body>
-<script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/",
-        "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.5.10/build/index.module.js"
-      }
-    }
-</script>
-<script type="module" src="./main.js"></script>
-<!-- <script type="module" src="./diamond.js"></script> -->
 
 </html>
