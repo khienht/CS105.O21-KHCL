@@ -39,6 +39,7 @@
                     <li><a href="#" onclick="addMesh(5);">Torus</a></li>
                     <li><a href="#" onclick="addMesh(6);">Teapot</a></li>
                     <li><a href="#" onclick="addMesh(7);">Heart</a></li>
+                    <li><a href="#" onclick="addMesh(8);">Diamond</a></li>
                     <li><a href="#" onclick="removeGeometry();">Reset</a></li>
                 </ul>
             </li>
@@ -51,6 +52,7 @@
                     <li><a href="#" onclick="SetSurface(1);">Point</a></li>
                     <li><a href="#" onclick="SetSurface(2);">Line</a></li>
                     <li><a href="#" onclick="SetSurface(3);">Solid</a></li>
+                    <li><a href="#" onclick="SetSurface(5);">Diamond</a></li>
                     <li>
                         <input type="file" accept="image/*" id="texture" style="display: none;"
                             onchange="ImgTexture(window.URL.createObjectURL(this.files[0]))" />
@@ -182,4 +184,5 @@
     }
 </script>
 <script type="module" src="./main.js"></script>
+
 </html>

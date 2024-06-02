@@ -1,10 +1,10 @@
-var Stats = function() {
+var Stats = function () {
 
     var mode = 0;
 
     var container = document.createElement('div');
     container.style.cssText = 'position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000';
-    container.addEventListener('click', function(event) {
+    container.addEventListener('click', function (event) {
 
         event.preventDefault();
         showPanel(++mode % container.children.length);
@@ -58,13 +58,13 @@ var Stats = function() {
         addPanel: addPanel,
         showPanel: showPanel,
 
-        begin: function() {
+        begin: function () {
 
             beginTime = (performance || Date).now();
 
         },
 
-        end: function() {
+        end: function () {
 
             frames++;
 
@@ -92,7 +92,7 @@ var Stats = function() {
 
         },
 
-        update: function() {
+        update: function () {
 
             beginTime = this.end();
 
@@ -107,7 +107,7 @@ var Stats = function() {
 
 };
 
-Stats.Panel = function(name, fg, bg) {
+Stats.Panel = function (name, fg, bg) {
 
     var min = Infinity,
         max = 0,
@@ -147,7 +147,7 @@ Stats.Panel = function(name, fg, bg) {
 
         dom: canvas,
 
-        update: function(value, maxValue) {
+        update: function (value, maxValue) {
 
             min = Math.min(min, value);
             max = Math.max(max, value);

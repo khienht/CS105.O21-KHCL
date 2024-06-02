@@ -3,20 +3,41 @@ import { TeapotGeometry } from "three/addons/geometries/TeapotGeometry.js";
 import { GUI } from "./lib/dat.gui.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
+import { AssetManager } from './diamond/AssetManager.js';
+// Post-processing effects from Three.js examples
+import { EffectComposer } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/ShaderPass.js';
+import { SMAAPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/SMAAPass.js';
+import { GammaCorrectionShader } from 'https://unpkg.com/three@0.142.0/examples/jsm/shaders/GammaCorrectionShader.js';
+// Custom shader for additional effects
+import { EffectShader } from "./diamond/EffectShader.js";
+// For displaying performance stats
+import {
+    MeshBVH,
+    MeshBVHVisualizer,
+    MeshBVHUniformStruct,
+    FloatVertexAttributeTexture,
+    shaderStructs,
+    shaderIntersectFunction,
+    SAH
+} from 'https://unpkg.com/three-mesh-bvh@0.5.10/build/index.module.js';
 var scene, camera, renderer, mesh, texture;
 var transControls;
 
 var LightSwitch = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
+var environment;
 var gui;
 var objColor, objColorGUI, objcolorflag = false;
 
 var transControls, color_bkgr, color_mat = 0xffffff;;
 var material;
-
+const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+const cubeCamera = new THREE.CubeCamera(1, 100000, cubeRenderTarget);
 // Geometry
 var BoxG = new THREE.BoxGeometry(30, 30, 30, 40, 40, 40);
-var ShereG = new THREE.SphereGeometry(20, 20, 20);
+var SphereG = new THREE.SphereGeometry(20, 20, 20);
 var ConeG = new THREE.ConeGeometry(18, 30, 32, 20);
 var CylinderG = new THREE.CylinderGeometry(15, 15, 30, 30, 5);
 var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
@@ -24,14 +45,19 @@ var teapotGeo = new TeapotGeometry(16);
 
 // var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
 var obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+const WIDTH = window.innerWidth;
+const HEIGHT = window.innerHeight;
 init();
 async function init() {
     scene = new THREE.Scene();
+    scene.add(cubeCamera);
+    cubeCamera.position.set(0, 5, 0);
+
 
     material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
 
     // Setup scene
-    const environment = await new THREE.CubeTextureLoader().loadAsync([
+    environment = await new THREE.CubeTextureLoader().loadAsync([
         "diamond/skybox/Box_Right.bmp",
         "diamond/skybox/Box_Left.bmp",
         "diamond/skybox/Box_Top.bmp",
@@ -54,7 +80,7 @@ async function init() {
     // Grid
     var size = 300;
     var divisions = 40;
-    var gridHelper = new THREE.GridHelper(size, divisions, 0xffffff ,0xffffff);
+    var gridHelper = new THREE.GridHelper(size, divisions, 0xffffff, 0xffffff);
     scene.add(gridHelper);
 
     renderer = new THREE.WebGLRenderer();
@@ -62,6 +88,8 @@ async function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('webgl').appendChild(renderer.domElement);
+    cubeCamera.update(renderer, scene);
+
 
     // Controls
     var controls = new OrbitControls(camera, renderer.domElement);
@@ -76,8 +104,8 @@ async function init() {
 
     // Resize handler
     function onWindowResize() {
-        const WIDTH = window.innerWidth;
-        const HEIGHT = window.innerHeight;
+        WIDTH = window.innerWidth;
+        HEIGHT = window.innerHeight;
 
         camera.aspect = WIDTH / HEIGHT;
         camera.updateProjectionMatrix();
@@ -130,28 +158,28 @@ async function init() {
 
 }
 function create_background_point() {
-	const vertices = [];
-	const num_points = 30000;
-	for (let i = 0; i < num_points; i++) {
-		const x = THREE.MathUtils.randFloatSpread(2000);
-		const y = THREE.MathUtils.randFloatSpread(2000);
-		const z = THREE.MathUtils.randFloatSpread(2000);
+    const vertices = [];
+    const num_points = 30000;
+    for (let i = 0; i < num_points; i++) {
+        const x = THREE.MathUtils.randFloatSpread(2000);
+        const y = THREE.MathUtils.randFloatSpread(2000);
+        const z = THREE.MathUtils.randFloatSpread(2000);
 
-		vertices.push(x, y, z);
-	}
+        vertices.push(x, y, z);
+    }
 
-	const background_geometry = new THREE.BufferGeometry();
-	background_geometry.setAttribute(
-		"position",
-		new THREE.Float32BufferAttribute(vertices, 3)
-	);
+    const background_geometry = new THREE.BufferGeometry();
+    background_geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(vertices, 3)
+    );
 
-	const background_material = new THREE.PointsMaterial({ color: 0x888888 });
-	const background_points = new THREE.Points(
-		background_geometry,
-		background_material
-	);
-	return background_points;
+    const background_material = new THREE.PointsMaterial({ color: 0x888888 });
+    const background_points = new THREE.Points(
+        background_geometry,
+        background_material
+    );
+    return background_points;
 }
 
 let currentEnvironment = null; // Biến lưu trữ texture nền hiện tại
@@ -175,10 +203,10 @@ async function ChangeBackGround(id) {
             "diamond/skybox/Box_Back.bmp"
         ]);
         environment.encoding = THREE.sRGBEncoding;
-        
+
         currentEnvironment = environment;
         scene.background = environment;
-        
+
     } else { // light
         // color_bkgr = 0xffffff;
         // color_bkgr = 0x000000;
@@ -189,7 +217,7 @@ async function ChangeBackGround(id) {
         scene.background = new THREE.Color(0x000000);
 
         var background_points = create_background_point();
-        background_points.name ='bkg'
+        background_points.name = 'bkg'
         scene.add(background_points);
         // color_mat = 0xffffff;
         // color_mat = 0x707070;
@@ -225,16 +253,20 @@ function updateCamera() {
 }
 
 //draw geometry
-function addMesh(id) {
-    mesh = scene.getObjectByName("mesh1");
-    scene.remove(mesh);
+async function addMesh(id) {
+    // Remove the existing mesh
+    let mesh = scene.getObjectByName("mesh1");
+    if (mesh) {
+        scene.remove(mesh);
+    }
 
+    // Switch case to create new mesh based on id
     switch (id) {
         case 1:
             mesh = new THREE.Mesh(BoxG, obj_material);
             break;
         case 2:
-            mesh = new THREE.Mesh(ShereG, obj_material);
+            mesh = new THREE.Mesh(SphereG, obj_material);
             break;
         case 3:
             mesh = new THREE.Mesh(ConeG, obj_material);
@@ -251,38 +283,47 @@ function addMesh(id) {
         case 7: {
             const extrudeSettings = {
                 amount: 2,
-                bevelEnable: true,
+                bevelEnabled: true,
                 bevelSegments: 2,
                 steps: 2,
                 bevelSize: 1,
                 bevelThickness: 1
             };
-            var heart = new THREE.ExtrudeGeometry(getHeart(), extrudeSettings);
+            const heartShape = getHeart();
+            const heart = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
             mesh = new THREE.Mesh(heart, obj_material);
             break;
         }
+        case 8:
+            const diamondGeo = (await AssetManager.loadGLTFAsync("diamond/diamond.glb")).scene.children[0].children[0].children[0].children[0].children[0].geometry;;
+            diamondGeo.scale(20, 20, 20);
+            mesh = new THREE.Mesh(diamondGeo, obj_material); // Use diamond geometry directly
+            break;
     }
 
-    if (objcolorflag == false) {
-        // Thêm objColorGUI vào GUI
+    // Add color GUI if it hasn't been added already
+    if (!objcolorflag) {
         objColor = { color: mesh.material.color.getHex() };
         objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
-        // Định nghĩa hàm callback khi màu sắc thay đổi
-        objColorGUI.onChange(function (value) {
+        objColorGUI.onChange((value) => {
             mesh.material.color.setHex(value);
-            material.color.setHex(value);
         });
         objcolorflag = true;
     }
 
+    // Set mesh properties
     mesh.name = "mesh1";
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
+    // Add mesh to the scene
     scene.add(mesh);
+
+    // Apply transformation and render the scene
     transform(mesh);
     render();
 }
+
 window.addMesh = addMesh;
 
 function removeGeometry() {
@@ -325,7 +366,126 @@ function CloneMesh(dummy_mesh) {
     scene.add(mesh);
     transform(mesh);
 }
-
+function makeDiamond(geo, {
+    color = new THREE.Color(1, 1, 1),
+    ior = 2.4
+} = {}) {
+    const mergedGeometry = geo;
+    mergedGeometry.boundsTree = new MeshBVH(mergedGeometry.toNonIndexed(), { lazyGeneration: false, strategy: SAH });
+    const collider = new THREE.Mesh(mergedGeometry);
+    collider.material.wireframe = true;
+    collider.material.opacity = 0.5;
+    collider.material.transparent = true;
+    collider.visible = false;
+    collider.boundsTree = mergedGeometry.boundsTree;
+    scene.add(collider);
+    const visualizer = new MeshBVHVisualizer(collider, 20);
+    visualizer.visible = false;
+    visualizer.update();
+    scene.add(visualizer);
+    const diamond = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+        uniforms: {
+            envMap: { value: environment },
+            bvh: { value: new MeshBVHUniformStruct() },
+            bounces: { value: 3 },
+            color: { value: color },
+            ior: { value: ior },
+            correctMips: { value: true },
+            projectionMatrixInv: { value: camera.projectionMatrixInverse },
+            viewMatrixInv: { value: camera.matrixWorld },
+            chromaticAberration: { value: true },
+            aberrationStrength: { value: 0.01 },
+            resolution: { value: new THREE.Vector2(WIDTH, HEIGHT) }
+        },
+        vertexShader: /*glsl*/ `
+    varying vec3 vWorldPosition;
+    varying vec3 vNormal;
+    uniform mat4 viewMatrixInv;
+    void main() {
+        vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+        vNormal = (viewMatrixInv * vec4(normalMatrix * normal, 0.0)).xyz;
+        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+    }
+    `,
+        fragmentShader: /*glsl*/ `
+    precision highp isampler2D;
+    precision highp usampler2D;
+    varying vec3 vWorldPosition;
+    varying vec3 vNormal;
+    uniform samplerCube envMap;
+    uniform float bounces;
+    ${shaderStructs}
+    ${shaderIntersectFunction}
+    uniform BVH bvh;
+    uniform float ior;
+    uniform vec3 color;
+    uniform bool correctMips;
+    uniform bool chromaticAberration;
+    uniform mat4 projectionMatrixInv;
+    uniform mat4 viewMatrixInv;
+    uniform mat4 modelMatrix;
+    uniform vec2 resolution;
+    uniform bool chromaticAbberation;
+    uniform float aberrationStrength;
+    vec3 totalInternalReflection(vec3 ro, vec3 rd, vec3 normal, float ior, mat4 modelMatrixInverse) {
+        vec3 rayOrigin = ro;
+        vec3 rayDirection = rd;
+        rayDirection = refract(rayDirection, normal, 1.0 / ior);
+        rayOrigin = vWorldPosition + rayDirection * 0.001;
+        rayOrigin = (modelMatrixInverse * vec4(rayOrigin, 1.0)).xyz;
+        rayDirection = normalize((modelMatrixInverse * vec4(rayDirection, 0.0)).xyz);
+        for(float i = 0.0; i < bounces; i++) {
+            uvec4 faceIndices = uvec4( 0u );
+            vec3 faceNormal = vec3( 0.0, 0.0, 1.0 );
+            vec3 barycoord = vec3( 0.0 );
+            float side = 1.0;
+            float dist = 0.0;
+            bvhIntersectFirstHit( bvh, rayOrigin, rayDirection, faceIndices, faceNormal, barycoord, side, dist );
+            vec3 hitPos = rayOrigin + rayDirection * max(dist - 0.001, 0.0);
+           // faceNormal *= side;
+            vec3 tempDir = refract(rayDirection, faceNormal, ior);
+            if (length(tempDir) != 0.0) {
+                rayDirection = tempDir;
+                break;
+            }
+            rayDirection = reflect(rayDirection, faceNormal);
+            rayOrigin = hitPos + rayDirection * 0.01;
+        }
+        rayDirection = normalize((modelMatrix * vec4(rayDirection, 0.0)).xyz);
+        return rayDirection;
+    }
+    void main() {
+        mat4 modelMatrixInverse = inverse(modelMatrix);
+        vec2 uv = gl_FragCoord.xy / resolution;
+        vec3 directionCamPerfect = (projectionMatrixInv * vec4(uv * 2.0 - 1.0, 0.0, 1.0)).xyz;
+        directionCamPerfect = (viewMatrixInv * vec4(directionCamPerfect, 0.0)).xyz;
+        directionCamPerfect = normalize(directionCamPerfect);
+        vec3 normal = vNormal;
+        vec3 rayOrigin = cameraPosition;
+        vec3 rayDirection = normalize(vWorldPosition - cameraPosition);
+        vec3 finalColor;
+        if (chromaticAberration) {
+        vec3 rayDirectionR = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior * (1.0 - aberrationStrength), 1.0), modelMatrixInverse);
+        vec3 rayDirectionG = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior, 1.0), modelMatrixInverse);
+        vec3 rayDirectionB = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior * (1.0 + aberrationStrength), 1.0), modelMatrixInverse);
+        float finalColorR = textureGrad(envMap, rayDirectionR, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).r;
+        float finalColorG = textureGrad(envMap, rayDirectionG, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).g;
+        float finalColorB = textureGrad(envMap, rayDirectionB, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).b;
+        finalColor = vec3(finalColorR, finalColorG, finalColorB) * color;
+        } else {
+            rayDirection = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior, 1.0), modelMatrixInverse);
+            finalColor = textureGrad(envMap, rayDirection, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).rgb;
+            finalColor *= color;
+        }
+        gl_FragColor = vec4(vec3(finalColor), 1.0);
+    }
+    `
+    }));
+    diamond.material.uniforms.bvh.value.updateFrom(collider.boundsTree);
+    diamond.castShadow = true;
+    diamond.receiveShadow = true;
+    return diamond;
+}
 // change surface
 function SetSurface(mat) {
     mesh = scene.getObjectByName("mesh1");
@@ -354,6 +514,11 @@ function SetSurface(mat) {
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
+            case 5: // Diamond
+                mesh = makeDiamond(dummy_mesh.geometry);
+                CloneMesh(dummy_mesh);
+                break;
+
         }
         render();
     }
@@ -389,7 +554,7 @@ window.Scale = Scale;
 function transform(mesh) {
     transControls.attach(mesh);
     scene.add(transControls);
-    console.log(transControls);
+    // console.log(transControls);
     window.addEventListener('keydown', function (event) {
         switch (event.keyCode) {
             case 84: // T
@@ -415,7 +580,7 @@ function transform(mesh) {
 }
 
 function removeLight() {
-    if(scene.getObjectByName("mesh1")){
+    if (scene.getObjectByName("mesh1")) {
         mesh = scene.getObjectByName("mesh1");
         obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
         mesh.material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
@@ -609,10 +774,11 @@ function setLight(LightID) {
     }
 
     if (LightSwitch) {
-        if(scene.getObjectByName("mesh1")){
+        if (scene.getObjectByName("mesh1")) {
             mesh = scene.getObjectByName("mesh1");
             obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
-            mesh.material = new THREE.MeshPhongMaterial({ color: '#ffffff' });}
+            mesh.material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
+        }
         meshPlane.receiveShadow = true;
         scene.add(meshPlane);
     }
