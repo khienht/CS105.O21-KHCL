@@ -4,27 +4,23 @@ import { GUI } from "./lib/dat.gui.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { AssetManager } from './diamond/AssetManager.js';
-// Post-processing effects from Three.js examples
 import { EffectComposer } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postprocessing/SMAAPass.js';
 import { GammaCorrectionShader } from 'https://unpkg.com/three@0.142.0/examples/jsm/shaders/GammaCorrectionShader.js';
 // Custom shader for additional effects
 import { EffectShader } from "./diamond/EffectShader.js";
-// For displaying performance stats
 import {
     MeshBVH,
     MeshBVHVisualizer,
     MeshBVHUniformStruct,
-    FloatVertexAttributeTexture,
     shaderStructs,
     shaderIntersectFunction,
     SAH
 } from 'https://unpkg.com/three-mesh-bvh@0.5.10/build/index.module.js';
-var scene, camera, renderer, mesh, texture;
-var transControls;
 
+var scene, camera, renderer, mesh, currentMeshName, texture;
+var transControls;
 var LightSwitch = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
 var environment;
@@ -42,11 +38,12 @@ var ConeG = new THREE.ConeGeometry(18, 30, 32, 20);
 var CylinderG = new THREE.CylinderGeometry(15, 15, 30, 30, 5);
 var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
 var teapotGeo = new TeapotGeometry(16);
+var diamondGeo;
 
 // var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
 var obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-const WIDTH = window.innerWidth;
-const HEIGHT = window.innerHeight;
+var WIDTH = window.innerWidth;
+var HEIGHT = window.innerHeight;
 init();
 async function init() {
     scene = new THREE.Scene();
@@ -68,6 +65,10 @@ async function init() {
     environment.encoding = THREE.sRGBEncoding;
     scene.background = environment;
 
+    // load model diamond geo
+    diamondGeo = (await AssetManager.loadGLTFAsync("diamond/diamond.glb")).scene.children[0].children[0].children[0].children[0].children[0].geometry;
+    diamondGeo.scale(20, 20, 20);
+
     // Camera
     var camera_x = 30;
     var camera_y = 50;
@@ -83,11 +84,13 @@ async function init() {
     var gridHelper = new THREE.GridHelper(size, divisions, 0xffffff, 0xffffff);
     scene.add(gridHelper);
 
+    // renderer
     renderer = new THREE.WebGLRenderer();
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('webgl').appendChild(renderer.domElement);
+    // cube camera
     cubeCamera.update(renderer, scene);
 
 
@@ -153,6 +156,20 @@ async function init() {
     // gridHelper.add(meshPlane);
 
     window.addEventListener('resize', onWindowResize, false);
+    // post-processing
+    const defaultTexture = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.NearestFilter
+    });
+    defaultTexture.depthTexture = new THREE.DepthTexture(WIDTH, HEIGHT, THREE.FloatType);
+    // Post Effects
+    const composer = new EffectComposer(renderer);
+    const smaaPass = new SMAAPass(WIDTH, HEIGHT);
+    const effectPass = new ShaderPass(EffectShader);
+    composer.addPass(effectPass);
+    composer.addPass(new ShaderPass(GammaCorrectionShader));
+    composer.addPass(smaaPass);
+
     controls.update();
     render();
 
@@ -193,16 +210,6 @@ async function ChangeBackGround(id) {
         if (currentEnvironment) {
             currentEnvironment.dispose();
         }
-
-        const environment = await new THREE.CubeTextureLoader().loadAsync([
-            "diamond/skybox/Box_Right.bmp",
-            "diamond/skybox/Box_Left.bmp",
-            "diamond/skybox/Box_Top.bmp",
-            "diamond/skybox/Box_Bottom.bmp",
-            "diamond/skybox/Box_Front.bmp",
-            "diamond/skybox/Box_Back.bmp"
-        ]);
-        environment.encoding = THREE.sRGBEncoding;
 
         currentEnvironment = environment;
         scene.background = environment;
@@ -264,21 +271,27 @@ async function addMesh(id) {
     switch (id) {
         case 1:
             mesh = new THREE.Mesh(BoxG, obj_material);
+            currentMeshName = 'box';
             break;
         case 2:
             mesh = new THREE.Mesh(SphereG, obj_material);
+            currentMeshName = 'sphere';
             break;
         case 3:
             mesh = new THREE.Mesh(ConeG, obj_material);
+            currentMeshName = 'cone';
             break;
         case 4:
             mesh = new THREE.Mesh(CylinderG, obj_material);
+            currentMeshName = 'cylinder';
             break;
         case 5:
             mesh = new THREE.Mesh(TorusG, obj_material);
+            currentMeshName = 'torus';
             break;
         case 6:
             mesh = new THREE.Mesh(teapotGeo, obj_material);
+            currentMeshName = 'teapot';
             break;
         case 7: {
             const extrudeSettings = {
@@ -292,12 +305,12 @@ async function addMesh(id) {
             const heartShape = getHeart();
             const heart = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
             mesh = new THREE.Mesh(heart, obj_material);
+            currentMeshName = 'heart';
             break;
         }
         case 8:
-            const diamondGeo = (await AssetManager.loadGLTFAsync("diamond/diamond.glb")).scene.children[0].children[0].children[0].children[0].children[0].geometry;;
-            diamondGeo.scale(20, 20, 20);
-            mesh = new THREE.Mesh(diamondGeo, obj_material); // Use diamond geometry directly
+            mesh = new THREE.Mesh(diamondGeo, obj_material);
+            currentMeshName = 'diamond';
             break;
     }
 
@@ -308,6 +321,7 @@ async function addMesh(id) {
         objColorGUI.onChange((value) => {
             mesh.material.color.setHex(value);
         });
+
         objcolorflag = true;
     }
 
@@ -351,7 +365,6 @@ function getHeart() {
     heartShape.bezierCurveTo(x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7);
     heartShape.bezierCurveTo(x + 16, y + 7, x + 16, y, x + 10, y);
     heartShape.bezierCurveTo(x + 7, y, x + 5, y + 5, x + 5, y + 5);
-
     return heartShape;
 }
 
@@ -370,24 +383,16 @@ function makeDiamond(geo, {
     color = new THREE.Color(1, 1, 1),
     ior = 2.4
 } = {}) {
+    // Create the BVH for the geometry
     const mergedGeometry = geo;
     mergedGeometry.boundsTree = new MeshBVH(mergedGeometry.toNonIndexed(), { lazyGeneration: false, strategy: SAH });
-    const collider = new THREE.Mesh(mergedGeometry);
-    collider.material.wireframe = true;
-    collider.material.opacity = 0.5;
-    collider.material.transparent = true;
-    collider.visible = false;
-    collider.boundsTree = mergedGeometry.boundsTree;
-    scene.add(collider);
-    const visualizer = new MeshBVHVisualizer(collider, 20);
-    visualizer.visible = false;
-    visualizer.update();
-    scene.add(visualizer);
+
+    // Create the diamond mesh with the custom shader material
     const diamond = new THREE.Mesh(geo, new THREE.ShaderMaterial({
         uniforms: {
             envMap: { value: environment },
             bvh: { value: new MeshBVHUniformStruct() },
-            bounces: { value: 3 },
+            bounces: { value: 4 },
             color: { value: color },
             ior: { value: ior },
             correctMips: { value: true },
@@ -442,7 +447,6 @@ function makeDiamond(geo, {
             float dist = 0.0;
             bvhIntersectFirstHit( bvh, rayOrigin, rayDirection, faceIndices, faceNormal, barycoord, side, dist );
             vec3 hitPos = rayOrigin + rayDirection * max(dist - 0.001, 0.0);
-           // faceNormal *= side;
             vec3 tempDir = refract(rayDirection, faceNormal, ior);
             if (length(tempDir) != 0.0) {
                 rayDirection = tempDir;
@@ -481,11 +485,17 @@ function makeDiamond(geo, {
     }
     `
     }));
-    diamond.material.uniforms.bvh.value.updateFrom(collider.boundsTree);
+
+    // Update the uniform with the BVH data
+    diamond.material.uniforms.bvh.value.updateFrom(mergedGeometry.boundsTree);
+
+    // Enable shadows
     diamond.castShadow = true;
     diamond.receiveShadow = true;
+
     return diamond;
 }
+
 // change surface
 function SetSurface(mat) {
     mesh = scene.getObjectByName("mesh1");
@@ -516,6 +526,16 @@ function SetSurface(mat) {
                 break;
             case 5: // Diamond
                 mesh = makeDiamond(dummy_mesh.geometry);
+                CloneMesh(dummy_mesh);
+                break;
+            case 6: // Mirror
+                material = new THREE.MeshLambertMaterial({
+                    map: texture,
+                    envMap: scene.background,
+                    combine: THREE.MixOperation,
+                    reflectivity: 1
+                })
+                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
 
