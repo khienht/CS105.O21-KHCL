@@ -169,6 +169,19 @@ async function loadAssets() {
     diamondGeo = gltf.scene.children[0].children[0].children[0].children[0].children[0].geometry;
     diamondGeo.scale(20, 20, 20);
 }
+function getHeart() {
+    const x = -10,
+        y = -10;
+    var heartShape = new THREE.Shape();
+    heartShape.moveTo(x + 5, y + 5);
+    heartShape.bezierCurveTo(x + 5, y + 5, x + 4, y, x, y);
+    heartShape.bezierCurveTo(x - 6, y, x - 6, y + 7, x - 6, y + 7);
+    heartShape.bezierCurveTo(x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19);
+    heartShape.bezierCurveTo(x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7);
+    heartShape.bezierCurveTo(x + 16, y + 7, x + 16, y, x + 10, y);
+    heartShape.bezierCurveTo(x + 7, y, x + 5, y + 5, x + 5, y + 5);
+    return heartShape;
+}
 function create_background_point() {
     const vertices = [];
     const num_points = 30000;
@@ -244,11 +257,9 @@ function updateCamera() {
 //draw geometry
 async function addMesh(id) {
     // Remove the existing mesh
-    let mesh = scene.getObjectByName("mesh1");
     if (mesh) {
         scene.remove(mesh);
     }
-
     // Switch case to create new mesh based on id
     switch (id) {
         case 1:
@@ -295,7 +306,6 @@ async function addMesh(id) {
             currentMeshName = 'diamond';
             break;
     }
-
     // Add color GUI if it hasn't been added already
     if (!objcolorflag) {
         objColor = { color: mesh.material.color.getHex() };
@@ -327,7 +337,6 @@ function removeGeometry() {
         scene.remove(mesh);
         gui.remove(objColorGUI);
         transControls.detach();
-        renderer.render(scene, camera);
         RemoveAllAnimation();
     } else {
         console.log("Mesh không tồn tại trong scene.");
@@ -335,20 +344,6 @@ function removeGeometry() {
     objcolorflag = false;
 }
 window.removeGeometry = removeGeometry;
-
-function getHeart() {
-    const x = -10,
-        y = -10;
-    var heartShape = new THREE.Shape();
-    heartShape.moveTo(x + 5, y + 5);
-    heartShape.bezierCurveTo(x + 5, y + 5, x + 4, y, x, y);
-    heartShape.bezierCurveTo(x - 6, y, x - 6, y + 7, x - 6, y + 7);
-    heartShape.bezierCurveTo(x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19);
-    heartShape.bezierCurveTo(x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7);
-    heartShape.bezierCurveTo(x + 16, y + 7, x + 16, y, x + 10, y);
-    heartShape.bezierCurveTo(x + 7, y, x + 5, y + 5, x + 5, y + 5);
-    return heartShape;
-}
 
 function CloneMesh(dummy_mesh) {
     mesh.name = dummy_mesh.name;
@@ -365,7 +360,6 @@ function CloneMesh(dummy_mesh) {
 
 // change surface
 function SetSurface(mat) {
-    mesh = scene.getObjectByName("mesh1");
     if (mesh) {
         const dummy_mesh = mesh.clone();
         scene.remove(mesh);
@@ -483,29 +477,18 @@ function transform(mesh) {
 }
 
 function removeLight() {
-    if (scene.getObjectByName("mesh1")) {
-        mesh = scene.getObjectByName("mesh1");
-        obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-        mesh.material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-    }
-    if (plFolder && gui.__folders.hasOwnProperty(plFolder.name)) {
-        gui.removeFolder(plFolder);
-    }
-    if (hemisphereFolder && gui.__folders.hasOwnProperty(hemisphereFolder.name)) {
-        gui.removeFolder(hemisphereFolder);
-    }
-    if (abFolder && gui.__folders.hasOwnProperty(abFolder.name)) {
-        gui.removeFolder(abFolder);
-    }
-    if (dlFolder && gui.__folders.hasOwnProperty(dlFolder.name)) {
-        gui.removeFolder(dlFolder);
-    }
-    if (slFolder && gui.__folders.hasOwnProperty(slFolder.name)) {
-        gui.removeFolder(slFolder);
-    }
-    scene.remove(helper);
-    scene.remove(light);
-    scene.remove(meshPlane);
+    const folders = [plFolder, hemisphereFolder, abFolder, dlFolder, slFolder];
+    folders.forEach(folder => {
+        if (folder && gui.__folders.hasOwnProperty(folder.name)) {
+            gui.removeFolder(folder);
+        }
+    });
+
+    [helper, light, meshPlane].forEach(obj => {
+        if (obj && scene.getObjectByName(obj.name)) {
+            scene.remove(obj);
+        }
+    });
 }
 
 function setLight(LightID) {
@@ -677,126 +660,106 @@ function setLight(LightID) {
     }
 
     if (LightSwitch) {
-        if (scene.getObjectByName("mesh1")) {
-            mesh = scene.getObjectByName("mesh1");
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            // obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
-            // mesh.material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
-        }
         meshPlane.receiveShadow = true;
         scene.add(meshPlane);
     }
-    // render();
 }
 window.setLight = setLight;
-// update camera
-function setFOV(value) {
-    camera.fov = Number(value);
-    camera.updateProjectionMatrix();
-    // render();
-}
-window.setFOV = setFOV;
+// // update camera
+// function setFOV(value) {
+//     camera.fov = Number(value);
+//     camera.updateProjectionMatrix();
+//     // render();
+// }
+// window.setFOV = setFOV;
 
-function setFar(value) {
-    camera.far = Number(value);
-    camera.updateProjectionMatrix();
-    // render();
-}
-window.setFar = setFar;
+// function setFar(value) {
+//     camera.far = Number(value);
+//     camera.updateProjectionMatrix();
+//     // render();
+// }
+// window.setFar = setFar;
 
-function setNear(value) {
-    camera.near = Number(value);
-    camera.updateProjectionMatrix();
-    // render();
-}
-window.setNear = setNear;
+// function setNear(value) {
+//     camera.near = Number(value);
+//     camera.updateProjectionMatrix();
+//     // render();
+// }
+// window.setNear = setNear;
 
 //animation
 let time = Date.now();
+let id_animation;
 
-mesh = scene.getObjectByName("mesh1");
-var id_animation1, id_animation2, id_animation3;
+const rotationSpeed = 0.01; // Rotation speed
+const scaleSpeed = 0.01; // Scaling speed
+let isScalingUp = true; // Flag for scaling direction
+let alpha = 0;
 
-function Animation1() {
-    const current_time = Date.now();
-    const delta_time = current_time - time;
+function startAnimation(animationId) {
+    // Cancel the current animation
+    cancelAnimationFrame(id_animation);
 
-    time = current_time;
-
-    cancelAnimationFrame(id_animation3);
-    cancelAnimationFrame(id_animation2);
-    cancelAnimationFrame(id_animation1);
-    mesh.rotation.x += delta_time * 0.0005;
-    mesh.rotation.y += delta_time * 0.002;
-    mesh.rotation.z += delta_time * 0.001;
-
-    // console.log("Animation 1");
-    id_animation1 = requestAnimationFrame(Animation1);
-    // renderer.render(scene, camera);
-}
-window.Animation1 = Animation1
-
-var rotationSpeed = 0.01; // Tốc độ xoay
-var scaleSpeed = 0.01; // Tốc độ thu/phóng
-var isScalingUp = true; // Cờ để xác định trạng thái thu/phóng
-
-function Animation2() {
-    cancelAnimationFrame(id_animation3);
-    cancelAnimationFrame(id_animation2);
-    cancelAnimationFrame(id_animation1);
-    // Xoay đối tượng
-    mesh.rotation.y += rotationSpeed;
-
-    // Thu/phóng đối tượng
-    if (isScalingUp) {
-        mesh.scale.x += scaleSpeed;
-        mesh.scale.y += scaleSpeed;
-        mesh.scale.z += scaleSpeed;
-    } else {
-        mesh.scale.x -= scaleSpeed;
-        mesh.scale.y -= scaleSpeed;
-        mesh.scale.z -= scaleSpeed;
-    }
-
-    // Kiểm tra nếu đối tượng đạt tới giới hạn thu/phóng thì đảo chiều
-    if (mesh.scale.x >= 2 || mesh.scale.x <= 0.5) {
-        isScalingUp = !isScalingUp;
-    }
-
-    // console.log("Animation 2");
-    id_animation2 = requestAnimationFrame(Animation2);
-    // renderer.render(scene, camera);
-}
-window.Animation2 = Animation2
-
-var alpha = 0;
-function Animation3() {
-    cancelAnimationFrame(id_animation3);
-    cancelAnimationFrame(id_animation2);
-    cancelAnimationFrame(id_animation1);
-
-    alpha += Math.PI * 0.005;
-    if (alpha >= Math.PI * 2) alpha = 0; // Đảm bảo alpha không vượt quá 2π
-
-    mesh.position.x = Math.sin(alpha) * 10;
-    mesh.position.z = Math.cos(alpha) * 10;
-
-    const rotationSpeed = 0.02;
-    mesh.rotation.y += rotationSpeed;
-    mesh.rotation.z += rotationSpeed * 0.5;
-
-    // console.log("Animation 3");
-    id_animation3 = requestAnimationFrame(Animation3);
-    // renderer.render(scene, camera);
-}
-window.Animation3 = Animation3
-
-function RemoveAllAnimation() {
-    cancelAnimationFrame(id_animation1);
-    cancelAnimationFrame(id_animation2);
-    cancelAnimationFrame(id_animation3);
+    // Reset mesh properties if needed
     mesh.rotation.set(0, 0, 0);
-    // render();
+    mesh.scale.set(1, 1, 1);
+    mesh.position.set(0, 0, 0);
+    alpha = 0; // Reset alpha for Animation3
+
+    function animate() {
+        const current_time = Date.now();
+        const delta_time = current_time - time;
+        time = current_time;
+
+        switch (animationId) {
+            case 1:
+                // Animation 1
+                mesh.rotation.x += delta_time * 0.0005;
+                mesh.rotation.y += delta_time * 0.002;
+                mesh.rotation.z += delta_time * 0.001;
+                break;
+            case 2:
+                // Animation 2
+                mesh.rotation.y += rotationSpeed;
+
+                if (isScalingUp) {
+                    mesh.scale.x += scaleSpeed;
+                    mesh.scale.y += scaleSpeed;
+                    mesh.scale.z += scaleSpeed;
+                } else {
+                    mesh.scale.x -= scaleSpeed;
+                    mesh.scale.y -= scaleSpeed;
+                    mesh.scale.z -= scaleSpeed;
+                }
+                // Kiểm tra nếu đối tượng đạt tới giới hạn thu/phóng thì đảo chiều
+                if (mesh.scale.x >= 2 || mesh.scale.x <= 0.5) {
+                    isScalingUp = !isScalingUp;
+                }
+                break;
+            case 3:
+                // Animation 3
+                alpha += Math.PI * 0.005;
+                if (alpha >= Math.PI * 2) alpha = 0;// Đảm bảo alpha không vượt quá 2π
+
+                mesh.position.x = Math.sin(alpha) * 10;
+                mesh.position.z = Math.cos(alpha) * 10;
+
+                mesh.rotation.y += rotationSpeed * 2;
+                mesh.rotation.z += rotationSpeed;
+                break;
+            default:
+                console.error("Invalid animation ID");
+                return;
+        }
+        id_animation = requestAnimationFrame(animate);
+    }
+    animate();
+}
+window.startAnimation = startAnimation;
+function RemoveAllAnimation() {
+    cancelAnimationFrame(id_animation);
+    mesh.rotation.set(0, 0, 0);
+    mesh.scale.set(1, 1, 1);
+    mesh.position.set(0, 0, 0);
 }
 window.RemoveAllAnimation = RemoveAllAnimation;
