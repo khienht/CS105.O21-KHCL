@@ -11,6 +11,7 @@ import { GammaCorrectionShader } from 'https://unpkg.com/three@0.142.0/examples/
 // Custom shader for additional effects
 import { EffectShader } from "./diamond/EffectShader.js";
 import { makeDiamond } from './diamond.js';
+import { reloadObject } from './models.js';
 
 var scene, camera, renderer, mesh, currentMeshName, texture;
 var transControls;
@@ -329,8 +330,21 @@ async function addMesh(id) {
     transform(mesh);
     // render();
 }
-
 window.addMesh = addMesh;
+
+function loadModels(model_name) {
+    if (mesh) {
+        scene.remove(mesh);
+    }
+
+    reloadObject(model_name, true).then(newMesh => {
+        mesh = newMesh;
+        scene.add(mesh);
+    }).catch(error => {
+        console.error('Error loading model:', error);
+    });
+}
+window.loadModels = loadModels;
 
 function removeGeometry() {
     if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag == true) {
