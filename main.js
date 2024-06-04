@@ -524,17 +524,30 @@ function SetSurface(mat) {
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
-            case 5: // Diamond
+            case 5: // Diamond ~ Required specific shape
                 mesh = makeDiamond(dummy_mesh.geometry);
                 CloneMesh(dummy_mesh);
                 break;
-            case 6: // Mirror
+            case 6: // Reflection 
                 material = new THREE.MeshLambertMaterial({
                     map: texture,
                     envMap: scene.background,
                     combine: THREE.MixOperation,
                     reflectivity: 1
                 })
+                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                CloneMesh(dummy_mesh);
+                break;
+            case 7: // Refraction 
+                material = new THREE.MeshPhysicalMaterial({
+                    color: 0xffffff,
+                    metalness: 0,
+                    roughness: 0.1,
+                    transmission: 1,  // Glass-like transparency
+                    thickness: 1.0,
+                    envMap: environment,  // Assuming envMap is defined as above
+                    refractionRatio: 0.98,
+                });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
