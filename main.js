@@ -10,14 +10,7 @@ import { SMAAPass } from 'https://unpkg.com/three@0.142.0/examples/jsm/postproce
 import { GammaCorrectionShader } from 'https://unpkg.com/three@0.142.0/examples/jsm/shaders/GammaCorrectionShader.js';
 // Custom shader for additional effects
 import { EffectShader } from "./diamond/EffectShader.js";
-import {
-    MeshBVH,
-    MeshBVHVisualizer,
-    MeshBVHUniformStruct,
-    shaderStructs,
-    shaderIntersectFunction,
-    SAH
-} from 'https://unpkg.com/three-mesh-bvh@0.5.10/build/index.module.js';
+import { makeDiamond } from './diamond.js';
 
 var scene, camera, renderer, mesh, currentMeshName, texture;
 var transControls;
@@ -50,24 +43,8 @@ async function init() {
     scene.add(cubeCamera);
     cubeCamera.position.set(0, 5, 0);
 
-
     material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-
-    // Setup scene
-    environment = await new THREE.CubeTextureLoader().loadAsync([
-        "diamond/skybox/Box_Right.bmp",
-        "diamond/skybox/Box_Left.bmp",
-        "diamond/skybox/Box_Top.bmp",
-        "diamond/skybox/Box_Bottom.bmp",
-        "diamond/skybox/Box_Front.bmp",
-        "diamond/skybox/Box_Back.bmp"
-    ]);
-    environment.encoding = THREE.sRGBEncoding;
-    scene.background = environment;
-
-    // load model diamond geo
-    diamondGeo = (await AssetManager.loadGLTFAsync("diamond/diamond.glb")).scene.children[0].children[0].children[0].children[0].children[0].geometry;
-    diamondGeo.scale(20, 20, 20);
+    await loadAssets();
 
     // Camera
     var camera_x = 30;
@@ -105,16 +82,6 @@ async function init() {
     });
     transControls.addEventListener('change', render);
 
-    // Resize handler
-    function onWindowResize() {
-        WIDTH = window.innerWidth;
-        HEIGHT = window.innerHeight;
-
-        camera.aspect = WIDTH / HEIGHT;
-        camera.updateProjectionMatrix();
-
-        renderer.setSize(WIDTH, HEIGHT);
-    }
 
     //GUI control
     {
@@ -174,6 +141,34 @@ async function init() {
     render();
 
 }
+// Resize handler
+function onWindowResize() {
+    WIDTH = window.innerWidth;
+    HEIGHT = window.innerHeight;
+
+    camera.aspect = WIDTH / HEIGHT;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(WIDTH, HEIGHT);
+}
+async function loadAssets() {
+    // Load environment
+    environment = await new THREE.CubeTextureLoader().loadAsync([
+        "diamond/skybox/Box_Right.bmp",
+        "diamond/skybox/Box_Left.bmp",
+        "diamond/skybox/Box_Top.bmp",
+        "diamond/skybox/Box_Bottom.bmp",
+        "diamond/skybox/Box_Front.bmp",
+        "diamond/skybox/Box_Back.bmp"
+    ]);
+    environment.encoding = THREE.sRGBEncoding;
+    scene.background = environment;
+
+    // Load model diamond geometry
+    const gltf = await AssetManager.loadGLTFAsync("diamond/diamond.glb");
+    diamondGeo = gltf.scene.children[0].children[0].children[0].children[0].children[0].geometry;
+    diamondGeo.scale(20, 20, 20);
+}
 function create_background_point() {
     const vertices = [];
     const num_points = 30000;
@@ -229,23 +224,10 @@ async function ChangeBackGround(id) {
         // color_mat = 0xffffff;
         // color_mat = 0x707070;
     }
-    material.color.set(obj_material);
+    material.color.set(obj_material.color);
 
     // scene.background = new THREE.Color(color_bkgr);
 }
-// function ChangeBackGround(id) {
-
-//     if (id == 1) { // dark
-//         color_bkgr = 0x000000;
-//         // color_mat = 0xffffff;
-//     } else { // light
-//         color_bkgr = 0xffffff;
-//         // color_mat = 0x707070;
-//     }
-//     material.color.set(obj_material);
-
-//     scene.background = new THREE.Color(color_bkgr);
-// }
 window.ChangeBackGround = ChangeBackGround;
 
 
@@ -256,7 +238,7 @@ function render() {
 
 function updateCamera() {
     camera.updateProjectionMatrix();
-    render();
+    // render();
 }
 
 //draw geometry
@@ -335,7 +317,7 @@ async function addMesh(id) {
 
     // Apply transformation and render the scene
     transform(mesh);
-    render();
+    // render();
 }
 
 window.addMesh = addMesh;
@@ -379,122 +361,7 @@ function CloneMesh(dummy_mesh) {
     scene.add(mesh);
     transform(mesh);
 }
-function makeDiamond(geo, {
-    color = new THREE.Color(1, 1, 1),
-    ior = 2.4
-} = {}) {
-    // Create the BVH for the geometry
-    const mergedGeometry = geo;
-    mergedGeometry.boundsTree = new MeshBVH(mergedGeometry.toNonIndexed(), { lazyGeneration: false, strategy: SAH });
 
-    // Create the diamond mesh with the custom shader material
-    const diamond = new THREE.Mesh(geo, new THREE.ShaderMaterial({
-        uniforms: {
-            envMap: { value: environment },
-            bvh: { value: new MeshBVHUniformStruct() },
-            bounces: { value: 4 },
-            color: { value: color },
-            ior: { value: ior },
-            correctMips: { value: true },
-            projectionMatrixInv: { value: camera.projectionMatrixInverse },
-            viewMatrixInv: { value: camera.matrixWorld },
-            chromaticAberration: { value: true },
-            aberrationStrength: { value: 0.01 },
-            resolution: { value: new THREE.Vector2(WIDTH, HEIGHT) }
-        },
-        vertexShader: /*glsl*/ `
-    varying vec3 vWorldPosition;
-    varying vec3 vNormal;
-    uniform mat4 viewMatrixInv;
-    void main() {
-        vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-        vNormal = (viewMatrixInv * vec4(normalMatrix * normal, 0.0)).xyz;
-        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-    }
-    `,
-        fragmentShader: /*glsl*/ `
-    precision highp isampler2D;
-    precision highp usampler2D;
-    varying vec3 vWorldPosition;
-    varying vec3 vNormal;
-    uniform samplerCube envMap;
-    uniform float bounces;
-    ${shaderStructs}
-    ${shaderIntersectFunction}
-    uniform BVH bvh;
-    uniform float ior;
-    uniform vec3 color;
-    uniform bool correctMips;
-    uniform bool chromaticAberration;
-    uniform mat4 projectionMatrixInv;
-    uniform mat4 viewMatrixInv;
-    uniform mat4 modelMatrix;
-    uniform vec2 resolution;
-    uniform bool chromaticAbberation;
-    uniform float aberrationStrength;
-    vec3 totalInternalReflection(vec3 ro, vec3 rd, vec3 normal, float ior, mat4 modelMatrixInverse) {
-        vec3 rayOrigin = ro;
-        vec3 rayDirection = rd;
-        rayDirection = refract(rayDirection, normal, 1.0 / ior);
-        rayOrigin = vWorldPosition + rayDirection * 0.001;
-        rayOrigin = (modelMatrixInverse * vec4(rayOrigin, 1.0)).xyz;
-        rayDirection = normalize((modelMatrixInverse * vec4(rayDirection, 0.0)).xyz);
-        for(float i = 0.0; i < bounces; i++) {
-            uvec4 faceIndices = uvec4( 0u );
-            vec3 faceNormal = vec3( 0.0, 0.0, 1.0 );
-            vec3 barycoord = vec3( 0.0 );
-            float side = 1.0;
-            float dist = 0.0;
-            bvhIntersectFirstHit( bvh, rayOrigin, rayDirection, faceIndices, faceNormal, barycoord, side, dist );
-            vec3 hitPos = rayOrigin + rayDirection * max(dist - 0.001, 0.0);
-            vec3 tempDir = refract(rayDirection, faceNormal, ior);
-            if (length(tempDir) != 0.0) {
-                rayDirection = tempDir;
-                break;
-            }
-            rayDirection = reflect(rayDirection, faceNormal);
-            rayOrigin = hitPos + rayDirection * 0.01;
-        }
-        rayDirection = normalize((modelMatrix * vec4(rayDirection, 0.0)).xyz);
-        return rayDirection;
-    }
-    void main() {
-        mat4 modelMatrixInverse = inverse(modelMatrix);
-        vec2 uv = gl_FragCoord.xy / resolution;
-        vec3 directionCamPerfect = (projectionMatrixInv * vec4(uv * 2.0 - 1.0, 0.0, 1.0)).xyz;
-        directionCamPerfect = (viewMatrixInv * vec4(directionCamPerfect, 0.0)).xyz;
-        directionCamPerfect = normalize(directionCamPerfect);
-        vec3 normal = vNormal;
-        vec3 rayOrigin = cameraPosition;
-        vec3 rayDirection = normalize(vWorldPosition - cameraPosition);
-        vec3 finalColor;
-        if (chromaticAberration) {
-        vec3 rayDirectionR = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior * (1.0 - aberrationStrength), 1.0), modelMatrixInverse);
-        vec3 rayDirectionG = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior, 1.0), modelMatrixInverse);
-        vec3 rayDirectionB = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior * (1.0 + aberrationStrength), 1.0), modelMatrixInverse);
-        float finalColorR = textureGrad(envMap, rayDirectionR, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).r;
-        float finalColorG = textureGrad(envMap, rayDirectionG, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).g;
-        float finalColorB = textureGrad(envMap, rayDirectionB, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).b;
-        finalColor = vec3(finalColorR, finalColorG, finalColorB) * color;
-        } else {
-            rayDirection = totalInternalReflection(rayOrigin, rayDirection, normal, max(ior, 1.0), modelMatrixInverse);
-            finalColor = textureGrad(envMap, rayDirection, dFdx(correctMips ? directionCamPerfect: rayDirection), dFdy(correctMips ? directionCamPerfect: rayDirection)).rgb;
-            finalColor *= color;
-        }
-        gl_FragColor = vec4(vec3(finalColor), 1.0);
-    }
-    `
-    }));
-
-    // Update the uniform with the BVH data
-    diamond.material.uniforms.bvh.value.updateFrom(mergedGeometry.boundsTree);
-
-    // Enable shadows
-    diamond.castShadow = true;
-    diamond.receiveShadow = true;
-
-    return diamond;
-}
 
 // change surface
 function SetSurface(mat) {
@@ -515,22 +382,22 @@ function SetSurface(mat) {
                 CloneMesh(dummy_mesh);
                 break;
             case 3: //Solid
-                material = new THREE.MeshBasicMaterial({ color: mesh.material.color });
+                material = new THREE.MeshPhongMaterial({ color: mesh.material.color });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                material = new THREE.MeshBasicMaterial({ map: texture, });
+                material = new THREE.MeshPhongMaterial({ map: texture, });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 5: // Diamond ~ Required specific shape
-                mesh = makeDiamond(dummy_mesh.geometry);
+                mesh = makeDiamond(dummy_mesh.geometry, environment, camera, WIDTH, HEIGHT);
                 CloneMesh(dummy_mesh);
                 break;
             case 6: // Reflection 
                 material = new THREE.MeshLambertMaterial({
-                    map: texture,
+                    map: environment,
                     envMap: scene.background,
                     combine: THREE.MixOperation,
                     reflectivity: 1
@@ -546,14 +413,17 @@ function SetSurface(mat) {
                     transmission: 1,  // Glass-like transparency
                     thickness: 1.0,
                     envMap: environment,  // Assuming envMap is defined as above
-                    refractionRatio: 0.98,
+                    // refractionRatio: 0.98,
                 });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
 
         }
-        render();
+        mesh.castShadow = true; // Enable shadow casting
+        mesh.receiveShadow = true; // Enable shadow receiving
+        scene.add(mesh);
+        // render();
     }
 }
 window.SetSurface = SetSurface
@@ -809,34 +679,36 @@ function setLight(LightID) {
     if (LightSwitch) {
         if (scene.getObjectByName("mesh1")) {
             mesh = scene.getObjectByName("mesh1");
-            obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
-            mesh.material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            // obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
+            // mesh.material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
         }
         meshPlane.receiveShadow = true;
         scene.add(meshPlane);
     }
-    render();
+    // render();
 }
 window.setLight = setLight;
 // update camera
 function setFOV(value) {
     camera.fov = Number(value);
     camera.updateProjectionMatrix();
-    render();
+    // render();
 }
 window.setFOV = setFOV;
 
 function setFar(value) {
     camera.far = Number(value);
     camera.updateProjectionMatrix();
-    render();
+    // render();
 }
 window.setFar = setFar;
 
 function setNear(value) {
     camera.near = Number(value);
     camera.updateProjectionMatrix();
-    render();
+    // render();
 }
 window.setNear = setNear;
 
@@ -859,9 +731,9 @@ function Animation1() {
     mesh.rotation.y += delta_time * 0.002;
     mesh.rotation.z += delta_time * 0.001;
 
-    console.log("Animation 1");
+    // console.log("Animation 1");
     id_animation1 = requestAnimationFrame(Animation1);
-    renderer.render(scene, camera);
+    // renderer.render(scene, camera);
 }
 window.Animation1 = Animation1
 
@@ -892,9 +764,9 @@ function Animation2() {
         isScalingUp = !isScalingUp;
     }
 
-    console.log("Animation 2");
+    // console.log("Animation 2");
     id_animation2 = requestAnimationFrame(Animation2);
-    renderer.render(scene, camera);
+    // renderer.render(scene, camera);
 }
 window.Animation2 = Animation2
 
@@ -914,9 +786,9 @@ function Animation3() {
     mesh.rotation.y += rotationSpeed;
     mesh.rotation.z += rotationSpeed * 0.5;
 
-    console.log("Animation 3");
+    // console.log("Animation 3");
     id_animation3 = requestAnimationFrame(Animation3);
-    renderer.render(scene, camera);
+    // renderer.render(scene, camera);
 }
 window.Animation3 = Animation3
 
@@ -925,6 +797,6 @@ function RemoveAllAnimation() {
     cancelAnimationFrame(id_animation2);
     cancelAnimationFrame(id_animation3);
     mesh.rotation.set(0, 0, 0);
-    render();
+    // render();
 }
 window.RemoveAllAnimation = RemoveAllAnimation;
