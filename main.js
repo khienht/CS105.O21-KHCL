@@ -11,20 +11,20 @@ import { GammaCorrectionShader } from 'https://unpkg.com/three@0.142.0/examples/
 // Custom shader for additional effects
 import { EffectShader } from "./diamond/EffectShader.js";
 import { makeDiamond } from './diamond.js';
-import { reloadObject } from './models.js';
+import { init_models, remove_models } from './models.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-var scene, camera, renderer, mesh, currentMeshName, texture;
+export var scene, camera, renderer, mesh, currentMeshName, currentMeshMaterial, texture, controls, light_env, dark_env, gui;
+var planeGeo, planeMat;
+var cubeRenderTarget, cubeCamera;
 var transControls;
 var LightSwitch = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
 var environment;
-var gui;
 var objColor, objColorGUI, objcolorflag = false;
 
 var transControls, color_bkgr, color_mat = 0xffffff;;
 var material;
-const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
-const cubeCamera = new THREE.CubeCamera(1, 100000, cubeRenderTarget);
 // Geometry
 var BoxG = new THREE.BoxGeometry(30, 30, 30, 40, 40, 40);
 var SphereG = new THREE.SphereGeometry(20, 20, 20);
@@ -34,46 +34,48 @@ var TorusG = new THREE.TorusGeometry(20, 5, 20, 100);
 var teapotGeo = new TeapotGeometry(16);
 var diamondGeo;
 
-// var obj_material = new THREE.MeshPhongMaterial({ color: '#ffffff' });
-var obj_material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-var WIDTH = window.innerWidth;
-var HEIGHT = window.innerHeight;
+var obj_material;
+var WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
 init();
 async function init() {
     scene = new THREE.Scene();
-    scene.add(cubeCamera);
-    cubeCamera.position.set(0, 5, 0);
-
-    material = new THREE.MeshBasicMaterial({ color: '#ffffff' });
-    await loadAssets();
 
     // Camera
-    var camera_x = 30;
-    var camera_y = 50;
-    var camera_z = 100;
-    camera = new THREE.PerspectiveCamera(75,
-        window.innerWidth / innerHeight, 1, 1000);
-    camera.position.set(camera_x, camera_y, camera_z);
+    camera = new THREE.PerspectiveCamera(75, WIDTH / HEIGHT, 1, 1000);
+    camera.position.set(30, 50, 100);
     camera.lookAt(scene.position);
+    // renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(WIDTH, HEIGHT);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+    document.body.appendChild(renderer.domElement);
 
+    window.addEventListener('resize', onWindowResize);
+
+    // Create cube camera
+    cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+    cubeRenderTarget.texture.type = THREE.HalfFloatType;
+    cubeCamera = new THREE.CubeCamera(1, 100000, cubeRenderTarget);
+    scene.add(cubeCamera);
+
+    obj_material = new THREE.MeshStandardMaterial({ color: '#ffffff' });
+    obj_material.toneMapped = false;
+    obj_material.envMapIntensity = 0.2;
+
+    await loadAssets();
+    ChangeBackGround(1);
     // Grid
     var size = 300;
     var divisions = 40;
     var gridHelper = new THREE.GridHelper(size, divisions, 0xffffff, 0xffffff);
     scene.add(gridHelper);
 
-    // renderer
-    renderer = new THREE.WebGLRenderer();
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('webgl').appendChild(renderer.domElement);
-    // cube camera
-    cubeCamera.update(renderer, scene);
-
-
     // Controls
-    var controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     transControls = new TransformControls(camera, renderer.domElement);
@@ -81,8 +83,7 @@ async function init() {
     transControls.addEventListener("dragging-changed", (event) => {
         controls.enabled = !event.value;
     });
-    transControls.addEventListener('change', render);
-
+    // transControls.addEventListener('change', render);
 
     //GUI control
     {
@@ -93,7 +94,7 @@ async function init() {
         customContainer.appendChild(gui.domElement);
         gui.updateDisplay();
     }
-
+    gui.add(renderer, 'toneMappingExposure', 0, 2).name('exposure');
     // View gui controls
     {
         const folderviewgui = gui.addFolder("View");
@@ -111,8 +112,8 @@ async function init() {
     }
 
     // Init plane for showing shadow
-    const planeGeo = new THREE.PlaneGeometry(size, size);
-    const planeMat = new THREE.MeshStandardMaterial({
+    planeGeo = new THREE.PlaneGeometry(size, size);
+    planeMat = new THREE.MeshStandardMaterial({
         // color: "#15151e",
         side: THREE.DoubleSide,
     });
@@ -122,48 +123,39 @@ async function init() {
         meshPlane.rotation.x = -Math.PI / 2;
     }
     // gridHelper.add(meshPlane);
+    setupPostProcessing();
+    renderer.setAnimationLoop(render);
+}
+function render() {
+    cubeCamera.update(renderer, scene);
+    controls.update();
+    renderer.render(scene, camera);
+}
+// Resize handler
+function onWindowResize() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-    window.addEventListener('resize', onWindowResize, false);
-    // post-processing
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+}
+//post processing 
+function setupPostProcessing() {
     const defaultTexture = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.NearestFilter
     });
     defaultTexture.depthTexture = new THREE.DepthTexture(WIDTH, HEIGHT, THREE.FloatType);
-    // Post Effects
+
     const composer = new EffectComposer(renderer);
-    const smaaPass = new SMAAPass(WIDTH, HEIGHT);
-    const effectPass = new ShaderPass(EffectShader);
-    composer.addPass(effectPass);
+    composer.addPass(new ShaderPass(EffectShader));
     composer.addPass(new ShaderPass(GammaCorrectionShader));
-    composer.addPass(smaaPass);
-
-    controls.update();
-    render();
-
-}
-// Resize handler
-function onWindowResize() {
-    WIDTH = window.innerWidth;
-    HEIGHT = window.innerHeight;
-
-    camera.aspect = WIDTH / HEIGHT;
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(WIDTH, HEIGHT);
+    composer.addPass(new SMAAPass(WIDTH, HEIGHT));
 }
 async function loadAssets() {
-    // Load environment
-    environment = await new THREE.CubeTextureLoader().loadAsync([
-        "diamond/skybox/Box_Right.bmp",
-        "diamond/skybox/Box_Left.bmp",
-        "diamond/skybox/Box_Top.bmp",
-        "diamond/skybox/Box_Bottom.bmp",
-        "diamond/skybox/Box_Front.bmp",
-        "diamond/skybox/Box_Back.bmp"
-    ]);
-    environment.encoding = THREE.sRGBEncoding;
-    scene.background = environment;
+    light_env = new RGBELoader()
+        .setPath('')
+        .load('sky.hdr');
+    light_env.mapping = THREE.EquirectangularReflectionMapping;
 
     // Load model diamond geometry
     const gltf = await AssetManager.loadGLTFAsync("diamond/diamond.glb");
@@ -211,48 +203,29 @@ function create_background_point() {
 let currentEnvironment = null; // Biến lưu trữ texture nền hiện tại
 //dark light mode
 async function ChangeBackGround(id) {
-
     if (id == 1) { // dark
         var bkg = scene.getObjectByName("bkg");
-        scene.remove(bkg);
-
-        if (currentEnvironment) {
-            currentEnvironment.dispose();
+        if (bkg) {
+            scene.remove(bkg);
+            bkg.geometry.dispose();
+            bkg.material.dispose();
         }
-
-        currentEnvironment = environment;
-        scene.background = environment;
-
+        currentEnvironment = light_env;
+        scene.background = light_env;
+        scene.environment = light_env
     } else { // light
-        // color_bkgr = 0xffffff;
-        // color_bkgr = 0x000000;
-        if (currentEnvironment) {
-            currentEnvironment.dispose();
-            currentEnvironment = null;
-        }
         scene.background = new THREE.Color(0x000000);
 
         var background_points = create_background_point();
         background_points.name = 'bkg'
+        currentEnvironment = background_points;
         scene.add(background_points);
-        // color_mat = 0xffffff;
-        // color_mat = 0x707070;
     }
-    material.color.set(obj_material.color);
-
-    // scene.background = new THREE.Color(color_bkgr);
 }
 window.ChangeBackGround = ChangeBackGround;
 
-
-function render() {
-    requestAnimationFrame(render);
-    renderer.render(scene, camera);
-}
-
 function updateCamera() {
     camera.updateProjectionMatrix();
-    // render();
 }
 
 //draw geometry
@@ -331,20 +304,17 @@ async function addMesh(id) {
     // render();
 }
 window.addMesh = addMesh;
-
-function loadModels(model_name) {
-    if (mesh) {
-        scene.remove(mesh);
+let toggle_model = false;
+function toggleModel() {
+    toggle_model = !toggle_model;
+    if (toggle_model) {
+        init_models();
     }
-
-    reloadObject(model_name, true).then(newMesh => {
-        mesh = newMesh;
-        scene.add(mesh);
-    }).catch(error => {
-        console.error('Error loading model:', error);
-    });
+    else {
+        remove_models();
+    }
 }
-window.loadModels = loadModels;
+window.toggleModel = toggleModel;
 
 function removeGeometry() {
     if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag == true) {
@@ -371,41 +341,42 @@ function CloneMesh(dummy_mesh) {
     transform(mesh);
 }
 
-
 // change surface
 function SetSurface(mat) {
     if (mesh) {
         const dummy_mesh = mesh.clone();
         scene.remove(mesh);
-
         switch (mat) {
             case 1: //Point
-                material = new THREE.PointsMaterial({ color: mesh.material.color, size: 0.8 });
+                material = new THREE.PointsMaterial({ color: mesh.material.color, size: 0.8, lights: true });
+                material.toneMapped = false;
                 mesh = new THREE.Points(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 2: //Line
-                material = new THREE.LineBasicMaterial({ color: mesh.material.color });
+                material = new THREE.MeshStandardMaterial({ color: mesh.material.color, wireframe: true });
+                material.toneMapped = false;
                 mesh = new THREE.Line(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 3: //Solid
-                material = new THREE.MeshPhongMaterial({ color: mesh.material.color });
+                material = new THREE.MeshBasicMaterial({ color: mesh.material.color });
+                material.toneMapped = false;
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                material = new THREE.MeshPhongMaterial({ map: texture, });
+                material = new THREE.MeshBasicMaterial({ map: texture, });
+                material.toneMapped = false;
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 5: // Diamond ~ Required specific shape
-                mesh = makeDiamond(dummy_mesh.geometry, environment, camera, WIDTH, HEIGHT);
+                mesh = makeDiamond(dummy_mesh.geometry, cubeRenderTarget.texture, camera, WIDTH, HEIGHT);
                 CloneMesh(dummy_mesh);
                 break;
             case 6: // Reflection 
                 material = new THREE.MeshLambertMaterial({
-                    map: environment,
                     envMap: scene.background,
                     combine: THREE.MixOperation,
                     reflectivity: 1
@@ -420,8 +391,7 @@ function SetSurface(mat) {
                     roughness: 0.1,
                     transmission: 1,  // Glass-like transparency
                     thickness: 1.0,
-                    envMap: environment,  // Assuming envMap is defined as above
-                    // refractionRatio: 0.98,
+                    envMap: scene.background,  // Assuming envMap is defined as above
                 });
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
@@ -512,6 +482,7 @@ function setLight(LightID) {
     switch (LightID) {
         case 1:	//Ambient light
             light = new THREE.AmbientLight(0xffffff, 0.5);
+            light.toneMapped = false;
             // set up ambient light gui
             {
                 const alSettings = { color: light.color.getHex() };
@@ -669,6 +640,8 @@ function setLight(LightID) {
             LightSwitch = true;
             break;
         case 6:
+            mesh.material = originalMaterial;
+            mesh.material.needsUpdate = true;
             LightSwitch = false;
             break;
     }
@@ -679,27 +652,6 @@ function setLight(LightID) {
     }
 }
 window.setLight = setLight;
-// // update camera
-// function setFOV(value) {
-//     camera.fov = Number(value);
-//     camera.updateProjectionMatrix();
-//     // render();
-// }
-// window.setFOV = setFOV;
-
-// function setFar(value) {
-//     camera.far = Number(value);
-//     camera.updateProjectionMatrix();
-//     // render();
-// }
-// window.setFar = setFar;
-
-// function setNear(value) {
-//     camera.near = Number(value);
-//     camera.updateProjectionMatrix();
-//     // render();
-// }
-// window.setNear = setNear;
 
 //animation
 let time = Date.now();
@@ -769,6 +721,7 @@ function startAnimation(animationId) {
     }
     animate();
 }
+
 window.startAnimation = startAnimation;
 function RemoveAllAnimation() {
     cancelAnimationFrame(id_animation);
