@@ -1,10 +1,5 @@
 import * as THREE from 'three';
 
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-
 import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
 import { LDrawUtils } from 'three/addons/utils/LDrawUtils.js';
 
@@ -12,7 +7,8 @@ let container, progressBarDiv;
 
 let guiData;
 import { camera, scene, renderer, controls, gui } from './main.js';
-let model, folder_model;
+import { transform } from './main.js';
+let mesh, folder_model;
 const ldrawPath = 'models/ldraw/officialLibrary/';
 
 const modelFileList = {
@@ -50,7 +46,7 @@ export function init_models() {
     progressBarDiv = document.createElement('div');
     progressBarDiv.innerText = 'Loading...';
     progressBarDiv.style.fontSize = '3em';
-    progressBarDiv.style.color = '#888';
+    progressBarDiv.style.color = 'blue';
     progressBarDiv.style.display = 'block';
     progressBarDiv.style.position = 'absolute';
     progressBarDiv.style.top = '50%';
@@ -60,13 +56,12 @@ export function init_models() {
     reloadObject(true);
 }
 export function remove_models() {
-    scene.remove(model);
+    scene.remove(mesh);
     gui.removeFolder(folder_model)
 }
 
 function updateObjectsVisibility() {
-
-    model.traverse(c => {
+    mesh.traverse(c => {
 
         if (c.isLineSegments) {
 
@@ -92,15 +87,9 @@ function updateObjectsVisibility() {
 }
 
 function reloadObject(resetCamera) {
-
-    if (model) {
-
-        scene.remove(model);
-
+    if (mesh) {
+        scene.remove(mesh);
     }
-
-    model = null;
-
     updateProgressBar(0);
     showProgressBar();
 
@@ -111,13 +100,11 @@ function reloadObject(resetCamera) {
         .setPath(ldrawPath)
         .load(guiData.modelFileName, function (group2) {
 
-            if (model) {
-
-                scene.remove(model);
-
+            if (mesh) {
+                scene.remove(mesh);
             }
 
-            model = group2;
+            mesh = group2;
 
             // demonstrate how to use convert to flat colors to better mimic the lego instructions look
             if (guiData.flatColors) {
@@ -138,7 +125,7 @@ function reloadObject(resetCamera) {
 
                 }
 
-                model.traverse(c => {
+                mesh.traverse(c => {
 
                     if (c.isMesh) {
 
@@ -159,31 +146,18 @@ function reloadObject(resetCamera) {
             }
 
             // Merge model geometries by material
-            if (guiData.mergeModel) model = LDrawUtils.mergeObject(model);
+            if (guiData.mergeModel) mesh = LDrawUtils.mergeObject(mesh);
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
-            model.rotation.x = Math.PI;
-            model.scale.set(0.5, 0.5, 0.5)
+            mesh.rotation.x = Math.PI;
+            mesh.scale.set(0.5, 0.5, 0.5)
 
-            scene.add(model);
+            scene.add(mesh);
+            transform(mesh);
 
-            guiData.buildingStep = model.userData.numBuildingSteps - 1;
+            guiData.buildingStep = mesh.userData.numBuildingSteps - 1;
 
             updateObjectsVisibility();
-
-            // Adjust camera and light
-
-            const bbox = new THREE.Box3().setFromObject(model);
-            const size = bbox.getSize(new THREE.Vector3());
-            const radius = Math.max(size.x, Math.max(size.y, size.z)) * 0.5;
-
-            if (resetCamera) {
-
-                controls.target0.copy(bbox.getCenter(new THREE.Vector3()));
-                controls.position0.set(- 2.3, 1, 2).multiplyScalar(radius).add(controls.target0);
-                controls.reset();
-
-            }
 
             createGUI();
 
@@ -213,9 +187,9 @@ function createGUI() {
 
     });
 
-    if (model.userData.numBuildingSteps > 1) {
+    if (mesh.userData.numBuildingSteps > 1) {
 
-        folder_model.add(guiData, 'buildingStep', 0, model.userData.numBuildingSteps - 1).step(1).name('Building step').onChange(updateObjectsVisibility);
+        folder_model.add(guiData, 'buildingStep', 0, mesh.userData.numBuildingSteps - 1).step(1).name('Building step').onChange(updateObjectsVisibility);
 
     } else {
 
@@ -252,7 +226,6 @@ function onError(error) {
     progressBarDiv.innerText = message;
     console.log(message);
     console.error(error);
-
 }
 
 function showProgressBar() {

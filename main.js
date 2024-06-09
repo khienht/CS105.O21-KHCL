@@ -308,6 +308,7 @@ let toggle_model = false;
 function toggleModel() {
     toggle_model = !toggle_model;
     if (toggle_model) {
+        scene.remove(mesh)
         init_models();
     }
     else {
@@ -416,23 +417,39 @@ function ImgTexture(url) {
 }
 window.ImgTexture = ImgTexture;
 
-// Affine transformation
 function Translate() {
-    transControls.setMode("translate");
+    if (transControls.mode === 'translate' && transControls.visible) {
+        transControls.visible = false;
+    } else {
+        transControls.visible = true;
+        transControls.setMode("translate");
+    }
 }
 window.Translate = Translate;
 
 function Rotate() {
-    transControls.setMode("rotate");
+    if (transControls.mode === 'rotate' && transControls.visible) {
+        transControls.visible = false;
+    } else {
+        transControls.visible = true;
+        transControls.setMode("rotate");
+    }
 }
 window.Rotate = Rotate;
 
 function Scale() {
-    transControls.setMode("scale");
+    if (transControls.mode === 'scale' && transControls.visible) {
+        transControls.visible = false;
+    } else {
+        transControls.visible = true;
+        transControls.setMode("scale");
+    }
 }
 window.Scale = Scale;
 
-function transform(mesh) {
+
+
+export function transform(mesh) {
     transControls.attach(mesh);
     scene.add(transControls);
     // console.log(transControls);
@@ -458,6 +475,7 @@ function transform(mesh) {
                 break;
         }
     });
+    transControls.visible = false;
 }
 
 function removeLight() {
