@@ -51,7 +51,7 @@ async function init() {
     renderer.setSize(WIDTH, HEIGHT);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMapping = THREE.LinearToneMapping;
     renderer.toneMappingExposure = 1;
     document.body.appendChild(renderer.domElement);
 
@@ -114,7 +114,7 @@ async function init() {
 
     // Init plane for showing shadow
     planeGeo = new THREE.PlaneGeometry(size, size);
-    planeMat = new THREE.MeshStandardMaterial({
+    planeMat = new THREE.MeshPhongMaterial({
         // color: "#15151e",
         side: THREE.DoubleSide,
     });
@@ -122,6 +122,7 @@ async function init() {
         meshPlane = new THREE.Mesh(planeGeo, planeMat);
         meshPlane.receiveShadow = true;
         meshPlane.rotation.x = -Math.PI / 2;
+        meshPlane.toneMapped = false;
     }
     // gridHelper.add(meshPlane);
     setupPostProcessing();
@@ -367,7 +368,7 @@ function SetSurface(mat) {
         scene.remove(mesh);
         switch (mat) {
             case 1: //Point
-                material = new THREE.PointsMaterial({ color: mesh.material.color, size: 0.8, lights: true });
+                material = new THREE.PointsMaterial({ color: mesh.material.color, size: 0.8 });
                 material.toneMapped = false;
                 mesh = new THREE.Points(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
@@ -427,7 +428,7 @@ function SetSurface(mat) {
                 mesh.material.color.set(value);
             });
         }
-        if (mat == 5) {
+        if (mat == 5 && !bounces && !ior) {
             var effectController = {
                 bounces: 3.0,
                 ior: 2.4,
@@ -548,141 +549,114 @@ function removeLight() {
             scene.remove(obj);
         }
     });
+    LightSwitch = false;
 }
 
 function setLight(LightID) {
     if (LightSwitch) {
         removeLight();
     }
+
+    if (meshPlane) {
+        meshPlane.receiveShadow = true;
+        meshPlane.castShadow = true;
+        scene.add(meshPlane);
+    }
+
     switch (LightID) {
-        case 1:	//Ambient light
+        case 1: // Ambient light
             light = new THREE.AmbientLight(0xffffff, 0.5);
             light.toneMapped = false;
             // set up ambient light gui
-            {
-                const alSettings = { color: light.color.getHex() };
-                abFolder = gui.addFolder('Ambient light');
-                abFolder.add(light, 'visible');
-                abFolder.add(light, 'intensity', 0, 3, 0.1);
-                abFolder
-                    .addColor(alSettings, 'color')
-                    .onChange((value) => light.color.set(value));
-                abFolder.open();
-            }
-
+            const alSettings = { color: light.color.getHex() };
+            abFolder = gui.addFolder('Ambient light');
+            abFolder.add(light, 'visible');
+            abFolder.add(light, 'intensity', 0, 3, 0.1);
+            abFolder.addColor(alSettings, 'color').onChange(value => light.color.set(value));
+            abFolder.open();
             scene.add(light);
             LightSwitch = true;
             break;
 
-        case 2: //Hemisphere Light
+        case 2: // Hemisphere Light
             light = new THREE.HemisphereLight(0xf0e424, 0xd41384, 3);
             light.visible = true;
-            // set up hemispherelight gui
-            {
-                hemisphereFolder = gui.addFolder('HemisphereLight');
-                const hlSettings = {
-                    visible: true,
-                    color: light.color.getHex(),
-                    GroundColor: light.groundColor.getHex(),
-                };
-                hemisphereFolder.add(light, 'visible');
-                hemisphereFolder.add(light, 'intensity', 0, 5);
-                hemisphereFolder.addColor(hlSettings, 'color')
-                    .name('sky')
-                    .onChange(color => {
-                        light.color.set(color);
-                    });
-                hemisphereFolder.addColor(hlSettings, 'GroundColor')
-                    .name('ground')
-                    .onChange(color => {
-                        light.groundColor.set(color);
-                    });
-                hemisphereFolder.open();
-            }
-            LightSwitch = true;
+            // set up hemisphere light gui
+            hemisphereFolder = gui.addFolder('HemisphereLight');
+            const hlSettings = {
+                visible: true,
+                color: light.color.getHex(),
+                GroundColor: light.groundColor.getHex(),
+            };
+            hemisphereFolder.add(light, 'visible');
+            hemisphereFolder.add(light, 'intensity', 0, 5);
+            hemisphereFolder.addColor(hlSettings, 'color').name('sky').onChange(color => light.color.set(color));
+            hemisphereFolder.addColor(hlSettings, 'GroundColor').name('ground').onChange(color => light.groundColor.set(color));
+            hemisphereFolder.open();
             scene.add(light);
+            LightSwitch = true;
             break;
 
-        case 3: //Directional light
+        case 3: // Directional light
             light = new THREE.DirectionalLight(0xffffff, 1);
             light.position.set(-5, 60, -4);
             light.castShadow = true;
             helper = new THREE.DirectionalLightHelper(light, 20);
             // set up directional light gui
-            {
-                const dlSettings = {
-                    visible: true,
-                    color: light.color.getHex(),
-                };
-                dlFolder = gui.addFolder('directional light');
-                dlFolder.add(light, 'intensity', 0, 5, 0.1);
-                dlFolder.add(light.position, 'y', 1, 100, 5);
-                dlFolder.add(light, 'castShadow');
-                dlFolder.add(light.position, 'x', -100, 100, 5);
-                dlFolder.add(light.position, 'y', -10, 100, 5);
-                dlFolder.add(light.position, 'z', -100, 100, 5);
-                dlFolder
-                    .addColor(dlSettings, 'color')
-                    .onChange((value) => light.color.set(value));
-                dlFolder.open();
-            }
-
-            {
-                light.shadow.mapSize.width = 1024;
-                light.shadow.mapSize.height = 1024;
-                light.shadow.camera.left = -200;
-                light.shadow.camera.right = 200;
-                light.shadow.camera.top = 200;
-                light.shadow.camera.bottom = -200;
-                light.shadow.camera.near = 0.5;
-                light.shadow.camera.far = 500;
-                light.shadow.bias = 0.0001;
-                light.target.position.set(-5, 0, 0);
-            }
-
-            LightSwitch = true;
+            const dlSettings = { visible: true, color: light.color.getHex() };
+            dlFolder = gui.addFolder('directional light');
+            dlFolder.add(light, 'intensity', 0, 5, 0.1);
+            dlFolder.add(light.position, 'y', 1, 100, 5);
+            dlFolder.add(light, 'castShadow');
+            dlFolder.add(light.position, 'x', -100, 100, 5);
+            dlFolder.add(light.position, 'y', -10, 100, 5);
+            dlFolder.add(light.position, 'z', -100, 100, 5);
+            dlFolder.addColor(dlSettings, 'color').onChange(value => light.color.set(value));
+            dlFolder.open();
+            // shadow settings
+            light.shadow.mapSize.width = 1024;
+            light.shadow.mapSize.height = 1024;
+            light.shadow.camera.left = -200;
+            light.shadow.camera.right = 200;
+            light.shadow.camera.top = 200;
+            light.shadow.camera.bottom = -200;
+            light.shadow.camera.near = 0.5;
+            light.shadow.camera.far = 500;
+            light.shadow.bias = 0.0001;
+            light.target.position.set(-5, 0, 0);
             scene.add(light);
             scene.add(light.target);
             scene.add(helper);
+            LightSwitch = true;
             break;
-        case 4: //Pointlight
+
+        case 4: // Pointlight
             light = new THREE.PointLight(0xffffff, 5, 100, 0);
             light.position.set(0, 60, 0);
             light.castShadow = true;
-
-            {
-                light.shadow.camera.near = 0.1;
-                light.shadow.camera.far = 12;
-                light.shadow.mapSize.width = 1024;
-                light.shadow.mapSize.height = 1024;
-                light.shadow.bias = 0.0001;
-            }
-
+            light.shadow.camera.near = 0.1;
+            light.shadow.camera.far = 12;
+            light.shadow.mapSize.width = 1024;
+            light.shadow.mapSize.height = 1024;
+            light.shadow.bias = 0.0001;
             helper = new THREE.PointLightHelper(light, 3);
             // set up pointlight gui
-            {
-                const plSettings = {
-                    visible: true,
-                    color: light.color.getHex(),
-                };
-                plFolder = gui.addFolder('Point light');
-                plFolder.add(light, 'intensity', 0, 10, 1);
-                plFolder.add(light, 'distance', 0, 200, 10);
-                plFolder.add(light.position, 'x', -300, 300, 5);
-                plFolder.add(light.position, 'y', -10, 100, 5);
-                plFolder.add(light.position, 'z', -300, 300, 5);
-                plFolder.add(light, 'castShadow');
-                plFolder
-                    .addColor(plSettings, 'color')
-                    .onChange((value) => light.color.set(value));
-                plFolder.open();
-            }
-
+            const plSettings = { visible: true, color: light.color.getHex() };
+            plFolder = gui.addFolder('Point light');
+            plFolder.add(light, 'intensity', 0, 10, 1);
+            plFolder.add(light, 'distance', 0, 200, 10);
+            plFolder.add(light.position, 'x', -300, 300, 5);
+            plFolder.add(light.position, 'y', -10, 100, 5);
+            plFolder.add(light.position, 'z', -300, 300, 5);
+            plFolder.add(light, 'castShadow');
+            plFolder.addColor(plSettings, 'color').onChange(value => light.color.set(value));
+            plFolder.open();
             scene.add(light);
             scene.add(helper);
             LightSwitch = true;
             break;
-        case 5:	//Spotlight
+
+        case 5: // Spotlight
             light = new THREE.SpotLight(0xffffff, 5, 100, Math.PI / 1.5, 0, 0);
             light.name = "SpotLight";
             light.position.set(5, 60, 5);
@@ -690,43 +664,35 @@ function setLight(LightID) {
             light.shadow.bias = 0.0001;
             helper = new THREE.SpotLightHelper(light);
             // set up spotlight gui
-            {
-                const slSettings = {
-                    visible: true,
-                    color: light.color.getHex(),
-                };
-                slFolder = gui.addFolder('Spotlight');
-                slFolder.add(light, 'intensity', 0, 10, 1);
-                slFolder.add(light, 'angle', 0, Math.PI);
-                slFolder.add(light, 'penumbra', 0, 1, 0.1);
-                slFolder.add(light, 'distance', 0, 200, 10);
-                slFolder.add(light.position, 'x', -300, 300, 5);
-                slFolder.add(light.position, 'y', -10, 100, 5);
-                slFolder.add(light.position, 'z', -300, 300, 5);
-                slFolder.add(light, 'castShadow');
-                slFolder
-                    .addColor(slSettings, 'color')
-                    .onChange((value) => light.color.set(value));
-                slFolder.open();
-            }
-
+            const slSettings = { visible: true, color: light.color.getHex() };
+            slFolder = gui.addFolder('Spotlight');
+            slFolder.add(light, 'intensity', 0, 10, 1);
+            slFolder.add(light, 'angle', 0, Math.PI);
+            slFolder.add(light, 'penumbra', 0, 1, 0.1);
+            slFolder.add(light, 'distance', 0, 200, 10);
+            slFolder.add(light.position, 'x', -300, 300, 5);
+            slFolder.add(light.position, 'y', -10, 100, 5);
+            slFolder.add(light.position, 'z', -300, 300, 5);
+            slFolder.add(light, 'castShadow');
+            slFolder.addColor(slSettings, 'color').onChange(value => light.color.set(value));
+            slFolder.open();
             scene.add(light);
             scene.add(helper);
             LightSwitch = true;
             break;
-        case 6:
-            mesh.material = originalMaterial;
-            mesh.material.needsUpdate = true;
+
+        case 6: // Reset material
+            scene.remove(meshPlane)
+            if (mesh) {
+                mesh.material = originalMaterial;
+                mesh.material.needsUpdate = true;
+            }
             LightSwitch = false;
             break;
     }
-
-    if (LightSwitch) {
-        meshPlane.receiveShadow = true;
-        scene.add(meshPlane);
-    }
 }
 window.setLight = setLight;
+
 
 //animation
 let time = Date.now();

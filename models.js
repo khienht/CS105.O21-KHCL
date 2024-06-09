@@ -150,7 +150,9 @@ function reloadObject(resetCamera) {
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
             mesh.rotation.x = Math.PI;
-            mesh.scale.set(0.5, 0.5, 0.5)
+            mesh.scale.set(0.5, 0.5, 0.5);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
 
             scene.add(mesh);
             transform(mesh);
