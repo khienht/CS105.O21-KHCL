@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { TeapotGeometry } from "three/addons/geometries/TeapotGeometry.js";
-import { GUI } from "./lib/dat.gui.module.js";
+import { GUI, color } from "./lib/dat.gui.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { AssetManager } from './diamond/AssetManager.js';
@@ -19,9 +19,10 @@ var planeGeo, planeMat;
 var cubeRenderTarget, cubeCamera;
 var transControls;
 var LightSwitch = false;
-var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder;
+var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder, objectFolder;
+var bounces, ior, objColor;
 var environment;
-var objColor, objColorGUI, objcolorflag = false;
+var objColorGUI, objcolorflag = false;
 
 var transControls, color_bkgr, color_mat = 0xffffff;;
 var material;
@@ -230,6 +231,10 @@ function updateCamera() {
 
 //draw geometry
 async function addMesh(id) {
+    if (toggle_model) {
+        toggle_model = !toggle_model;
+        remove_models();
+    }
     // Remove the existing mesh
     if (mesh) {
         scene.remove(mesh);
@@ -280,15 +285,24 @@ async function addMesh(id) {
             currentMeshName = 'diamond';
             break;
     }
-    // Add color GUI if it hasn't been added already
-    if (!objcolorflag) {
-        objColor = { color: mesh.material.color.getHex() };
-        objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
-        objColorGUI.onChange((value) => {
-            mesh.material.color.setHex(value);
-        });
+    // // Add color GUI if it hasn't been added already
+    // if (!objcolorflag) {
+    //     objColor = { color: mesh.material.color.getHex() };
+    //     objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
+    //     objColorGUI.onChange((value) => {
+    //         mesh.material.color.setHex(value);
+    //     });
 
-        objcolorflag = true;
+    //     objcolorflag = true;
+    // }
+    // Add object folder
+    // Initialize objectFolder if it hasn't been created
+    if (!objectFolder) {
+        objectFolder = gui.addFolder("Objects");
+        // Add a color picker to the folder
+        objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
+            mesh.material.color.set(value);
+        });
     }
 
     // Set mesh properties
@@ -307,6 +321,10 @@ window.addMesh = addMesh;
 let toggle_model = false;
 function toggleModel() {
     toggle_model = !toggle_model;
+    if (objectFolder) {
+        gui.removeFolder(objectFolder)
+        objectFolder = null;
+    }
     if (toggle_model) {
         scene.remove(mesh)
         init_models();
@@ -398,6 +416,45 @@ function SetSurface(mat) {
                 CloneMesh(dummy_mesh);
                 break;
 
+        }
+        if (mat == 4 || mat == 5 || mat == 6 || mat == 7) {
+            if (objColor)
+                objectFolder.remove(objColor);
+            objColor = null;
+        }
+        else if (!objColor) {
+            objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
+                mesh.material.color.set(value);
+            });
+        }
+        if (mat == 5) {
+            var effectController = {
+                bounces: 3.0,
+                ior: 2.4,
+                correctMips: true,
+                chromaticAberration: true,
+                aberrationStrength: 0.01
+            };
+
+            bounces = objectFolder.add(effectController, "bounces", 1.0, 10.0, 1.0).name("Bounces").onChange((value) => {
+                effectController.bounces = value;
+                mesh.material.uniforms.bounces.value = effectController.bounces;
+            });
+            ior = objectFolder.add(effectController, "ior", 1.0, 5.0, 0.01).name("IOR").onChange((value) => {
+                effectController.ior = value;
+                mesh.material.uniforms.ior.value = effectController.ior;
+            });
+            objectFolder.open();
+        }
+        else {
+            if (bounces) {
+                objectFolder.remove(bounces)
+                bounces = null;
+            }
+            if (ior) {
+                objectFolder.remove(ior)
+                ior = null;
+            }
         }
         mesh.castShadow = true; // Enable shadow casting
         mesh.receiveShadow = true; // Enable shadow receiving
