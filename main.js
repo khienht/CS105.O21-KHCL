@@ -18,11 +18,11 @@ export var scene, camera, renderer, mesh, currentMeshName, currentMeshMaterial, 
 var planeGeo, planeMat;
 var cubeRenderTarget, cubeCamera;
 var transControls;
-var LightSwitch = false;
+var LightSwitch = false, objcolorflag = false;
+let translateActive = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder, objectFolder;
 var bounces, ior, objColor, objDiamondColor;
 var environment;
-var objColorGUI, objcolorflag = false;
 
 var transControls, color_bkgr, color_mat = 0xffffff;;
 var material;
@@ -327,13 +327,25 @@ async function addMesh(id) {
             currentMeshName = 'diamond';
             break;
     }
+    // // Add color GUI if it hasn't been added already
+    // if (!objcolorflag) {
+    //     objColor = { color: mesh.material.color.getHex() };
+    //     objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
+    //     objColorGUI.onChange((value) => {
+    //         mesh.material.color.setHex(value);
+    //     });
+
+    //     objcolorflag = true;
+    // }
+    // Add object folder
     // Initialize objectFolder if it hasn't been created
-    if (!objectFolder) {
+    if (!objcolorflag) {
         objectFolder = gui.addFolder("Objects");
         // Add a color picker to the folder
         objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
             mesh.material.color.set(value);
         });
+        objcolorflag = true;
     }
 
     // Set mesh properties
@@ -367,11 +379,15 @@ function toggleModel() {
 window.toggleModel = toggleModel;
 
 function removeGeometry() {
-    if (scene.getObjectById(mesh.id) !== undefined && transControls.object) {
+    if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag == true) {
         scene.remove(mesh);
-        gui.remove(objColorGUI);
-        transControls.detach();
+        gui.removeFolder(objectFolder);
         RemoveAllAnimation();
+        // Dispose geometry and material to free up resources
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) mesh.material.dispose();
+
+        console.log("Mesh đã được xóa khỏi scene.");
     } else {
         console.log("Mesh không tồn tại trong scene.");
     }
@@ -589,6 +605,12 @@ function removeLight() {
             scene.remove(obj);
         }
     });
+
+    if (translateActive && mesh) {
+        transControls.detach(); // Đảm bảo tắt chế độ translate
+        transform(mesh); // Chuyển chế độ transform lại cho mesh
+        translateActive = false; // Đặt lại biến trạng thái
+    }
     LightSwitch = false;
 }
 
@@ -639,17 +661,16 @@ function setLight(LightID) {
 
         case 3: // Directional light
             light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(-5, 60, -4);
+            light.position.set(-10, 60, 0);
             light.castShadow = true;
             helper = new THREE.DirectionalLightHelper(light, 20);
+
             // set up directional light gui
-            const dlSettings = { visible: true, color: light.color.getHex() };
+            const dlSettings = { visible: true, color: light.color.getHex(), translate: false };
             dlFolder = gui.addFolder('directional light');
             dlFolder.add(light, 'intensity', 0, 5, 0.1);
+            dlFolder.add(light.position, 'y', 1, 100, 5);
             dlFolder.add(light, 'castShadow');
-            dlFolder.add(light.position, 'x', -100, 100, 5);
-            dlFolder.add(light.position, 'y', -10, 100, 5);
-            dlFolder.add(light.position, 'z', -100, 100, 5);
             dlFolder.addColor(dlSettings, 'color').onChange(value => light.color.set(value));
             dlFolder.open();
             // shadow settings
@@ -661,8 +682,8 @@ function setLight(LightID) {
             light.shadow.camera.bottom = -200;
             light.shadow.camera.near = 0.5;
             light.shadow.camera.far = 500;
-            light.shadow.bias = 0.0001;
-            light.target.position.set(-5, 0, 0);
+            light.shadow.bias = -0.001;
+            light.target.position.set(0, 0, 0);
             scene.add(light);
             scene.add(light.target);
             scene.add(helper);
@@ -671,22 +692,31 @@ function setLight(LightID) {
 
         case 4: // Pointlight
             light = new THREE.PointLight(0xffffff, 5, 100, 0);
-            light.position.set(0, 60, 0);
+            light.position.set(0, 70, 0);
             light.castShadow = true;
-            light.shadow.camera.near = 0.1;
-            light.shadow.camera.far = 12;
-            light.shadow.mapSize.width = 1024;
-            light.shadow.mapSize.height = 1024;
-            light.shadow.bias = 0.0001;
+            // light.shadow.mapSize.width = 1024;
+            // light.shadow.mapSize.height = 1024;
+            light.shadow.bias = -0.001;
             helper = new THREE.PointLightHelper(light, 3);
+
             // set up pointlight gui
-            const plSettings = { visible: true, color: light.color.getHex() };
+            const plSettings = { visible: true, color: light.color.getHex(), translate: false };
             plFolder = gui.addFolder('Point light');
             plFolder.add(light, 'intensity', 0, 10, 1);
             plFolder.add(light, 'distance', 0, 200, 10);
-            plFolder.add(light.position, 'x', -300, 300, 5);
-            plFolder.add(light.position, 'y', -10, 100, 5);
-            plFolder.add(light.position, 'z', -300, 300, 5);
+            plFolder.add(plSettings, 'translate').onChange((value) => {
+                if (value) {
+                    // Bật chế độ translate
+                    transControls.setMode('translate');
+                    transControls.attach(light);
+                    translateActive = true;
+                } else {
+                    // Tắt chế độ translate
+                    transControls.detach();
+                    if (mesh) transform(mesh);
+                    translateActive = false;
+                }
+            });
             plFolder.add(light, 'castShadow');
             plFolder.addColor(plSettings, 'color').onChange(value => light.color.set(value));
             plFolder.open();
@@ -696,22 +726,35 @@ function setLight(LightID) {
             break;
 
         case 5: // Spotlight
-            light = new THREE.SpotLight(0xffffff, 5, 100, Math.PI / 1.5, 0, 0);
+            light = new THREE.SpotLight(0xffffff, 4, 100, Math.PI / 1.5, 0, 0);
             light.name = "SpotLight";
             light.position.set(5, 60, 5);
+            light.shadow.mapSize.width = 1024;
+            light.shadow.mapSize.height = 1024;
+            light.shadow.bias = -0.00001;
             light.castShadow = true;
-            light.shadow.bias = 0.0001;
             helper = new THREE.SpotLightHelper(light);
+
             // set up spotlight gui
-            const slSettings = { visible: true, color: light.color.getHex() };
+            const slSettings = { visible: true, color: light.color.getHex(), translate: false };
             slFolder = gui.addFolder('Spotlight');
-            slFolder.add(light, 'intensity', 0, 10, 1);
-            slFolder.add(light, 'angle', 0, Math.PI);
-            slFolder.add(light, 'penumbra', 0, 1, 0.1);
-            slFolder.add(light, 'distance', 0, 200, 10);
-            slFolder.add(light.position, 'x', -300, 300, 5);
-            slFolder.add(light.position, 'y', -10, 100, 5);
-            slFolder.add(light.position, 'z', -300, 300, 5);
+            slFolder.add(light, 'intensity', 0, 10, 1); // độ sáng
+            slFolder.add(light, 'angle', 0, Math.PI); //góc của chùm sáng
+            slFolder.add(light, 'penumbra', 0, 1, 0.1); //mức độ mềm của cạnh chùm sáng
+            slFolder.add(light, 'distance', 0, 200, 10); //khoảng cách vùng sáng
+            slFolder.add(slSettings, 'translate').onChange((value) => {
+                if (value) {
+                    // Bật chế độ translate
+                    transControls.setMode('translate');
+                    transControls.attach(light);
+                    translateActive = true;
+                } else {
+                    // Tắt chế độ translate
+                    transControls.detach();
+                    if (mesh) transform(mesh);
+                    translateActive = false;
+                }
+            });
             slFolder.add(light, 'castShadow');
             slFolder.addColor(slSettings, 'color').onChange(value => light.color.set(value));
             slFolder.open();
@@ -723,7 +766,7 @@ function setLight(LightID) {
         case 6: // Reset material
             scene.remove(meshPlane)
             if (mesh) {
-                mesh.material = originalMaterial;
+                // mesh.material = originalMaterial;
                 mesh.material.needsUpdate = true;
             }
             LightSwitch = false;
