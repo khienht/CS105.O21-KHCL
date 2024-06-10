@@ -110,7 +110,7 @@ async function init() {
         foldercamgui.add(camera, "far", 200, 2000, 10).name("Far").onChange(updateCamera);
     }
     await loadAssets();
-    ChangeBackGround(0);
+    ChangeBackGround(1);
 
     // Init plane for showing shadow
     planeGeo = new THREE.PlaneGeometry(size, size);
