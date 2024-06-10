@@ -20,7 +20,7 @@ var cubeRenderTarget, cubeCamera;
 var transControls;
 var LightSwitch = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder, objectFolder;
-var bounces, ior, objColor;
+var bounces, ior, objColor, objDiamondColor;
 var environment;
 var objColorGUI, objcolorflag = false;
 
@@ -63,12 +63,10 @@ async function init() {
     cubeCamera = new THREE.CubeCamera(1, 100000, cubeRenderTarget);
     scene.add(cubeCamera);
 
-    obj_material = new THREE.MeshStandardMaterial({ color: '#ffffff' });
+    obj_material = new THREE.MeshStandardMaterial({ color: '#ffffff', });
     obj_material.toneMapped = false;
     obj_material.envMapIntensity = 0.2;
 
-    await loadAssets();
-    ChangeBackGround(1);
     // Grid
     var size = 300;
     var divisions = 40;
@@ -111,6 +109,8 @@ async function init() {
         foldercamgui.add(camera, "near", 0.1, 100, 0.1).name("Near").onChange(updateCamera);
         foldercamgui.add(camera, "far", 200, 2000, 10).name("Far").onChange(updateCamera);
     }
+    await loadAssets();
+    ChangeBackGround(0);
 
     // Init plane for showing shadow
     planeGeo = new THREE.PlaneGeometry(size, size);
@@ -154,13 +154,33 @@ function setupPostProcessing() {
     composer.addPass(new SMAAPass(WIDTH, HEIGHT));
 }
 async function loadAssets() {
-    light_env = new RGBELoader()
-        .setPath('')
-        .load('sky.hdr');
-    light_env.mapping = THREE.EquirectangularReflectionMapping;
+    // Load light environment
+    const lightEnvPromise = new Promise((resolve, reject) => {
+        new RGBELoader()
+            .setPath('')
+            .load('sky.hdr', (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                texture.light = new THREE.AmbientLight(0xffffff, 0.5)
+                resolve(texture);
+            }, undefined, reject);
+    });
+
+    // Load dark environment
+    const darkEnvPromise = new Promise((resolve, reject) => {
+        new RGBELoader()
+            .setPath('')
+            .load('night.hdr', (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                texture.light = new THREE.AmbientLight(0xffffff, 0.5);
+                resolve(texture);
+            }, undefined, reject);
+    });
 
     // Load model diamond geometry
-    const gltf = await AssetManager.loadGLTFAsync("diamond/diamond.glb");
+    const gltfPromise = AssetManager.loadGLTFAsync("diamond/diamond.glb");
+    var gltf;
+    [light_env, dark_env, gltf] = await Promise.all([lightEnvPromise, darkEnvPromise, gltfPromise]);
+
     diamondGeo = gltf.scene.children[0].children[0].children[0].children[0].children[0].geometry;
     diamondGeo.scale(20, 20, 20);
 }
@@ -205,25 +225,46 @@ function create_background_point() {
 let currentEnvironment = null; // Biến lưu trữ texture nền hiện tại
 //dark light mode
 async function ChangeBackGround(id) {
-    if (id == 1) { // dark
-        var bkg = scene.getObjectByName("bkg");
-        if (bkg) {
-            scene.remove(bkg);
-            bkg.geometry.dispose();
-            bkg.material.dispose();
-        }
+    var bkg = scene.getObjectByName("bkg");
+    if (bkg) {
+        scene.remove(bkg);
+        bkg.geometry.dispose();
+        bkg.material.dispose();
+    }
+
+    if (id == 1) { // light
         currentEnvironment = light_env;
         scene.background = light_env;
-        scene.environment = light_env
-    } else { // light
-        scene.background = new THREE.Color(0x000000);
-
-        var background_points = create_background_point();
-        background_points.name = 'bkg'
-        currentEnvironment = background_points;
-        scene.add(background_points);
+        scene.environment = light_env;
+        renderer.toneMappingExposure = 1;
+    } else { // dark
+        currentEnvironment = dark_env;
+        scene.background = dark_env;
+        scene.environment = dark_env;
+        renderer.toneMappingExposure = 0.05;
     }
+
+    // Adjust the maximum value of the toneMappingExposure control
+    if (gui.__controllers) {
+        for (var i in gui.__controllers) {
+            if (gui.__controllers[i].property === 'toneMappingExposure') {
+                if (id == 0) { // dark environment
+                    gui.__controllers[i].max(0.1);
+                } else { // light environment
+                    gui.__controllers[i].max(2);
+                }
+                gui.__controllers[i].updateDisplay();
+            }
+        }
+    } else {
+        // Add the exposure control if it doesn't exist
+        gui.add(renderer, 'toneMappingExposure', 0, (id == 1) ? 0.1 : 2).name('Exposure');
+    }
+
+    // Uncomment if you need to update cubeCamera texture
+    // cubeCamera.texture = currentEnvironment.texture;
 }
+
 window.ChangeBackGround = ChangeBackGround;
 
 function updateCamera() {
@@ -286,17 +327,6 @@ async function addMesh(id) {
             currentMeshName = 'diamond';
             break;
     }
-    // // Add color GUI if it hasn't been added already
-    // if (!objcolorflag) {
-    //     objColor = { color: mesh.material.color.getHex() };
-    //     objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
-    //     objColorGUI.onChange((value) => {
-    //         mesh.material.color.setHex(value);
-    //     });
-
-    //     objcolorflag = true;
-    // }
-    // Add object folder
     // Initialize objectFolder if it hasn't been created
     if (!objectFolder) {
         objectFolder = gui.addFolder("Objects");
@@ -337,7 +367,7 @@ function toggleModel() {
 window.toggleModel = toggleModel;
 
 function removeGeometry() {
-    if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag == true) {
+    if (scene.getObjectById(mesh.id) !== undefined && transControls.object) {
         scene.remove(mesh);
         gui.remove(objColorGUI);
         transControls.detach();
@@ -380,23 +410,23 @@ function SetSurface(mat) {
                 CloneMesh(dummy_mesh);
                 break;
             case 3: //Solid
-                material = new THREE.MeshBasicMaterial({ color: mesh.material.color });
+                material = new THREE.MeshPhongMaterial({ color: mesh.material.color });
                 material.toneMapped = false;
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                material = new THREE.MeshBasicMaterial({ map: texture, });
+                material = new THREE.MeshPhongMaterial({ map: texture, });
                 material.toneMapped = false;
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
                 break;
             case 5: // Diamond ~ Required specific shape
-                mesh = makeDiamond(dummy_mesh.geometry, cubeRenderTarget.texture, camera, WIDTH, HEIGHT);
+                mesh = makeDiamond(dummy_mesh.geometry, scene.background, camera, WIDTH, HEIGHT);
                 CloneMesh(dummy_mesh);
                 break;
             case 6: // Reflection 
-                material = new THREE.MeshLambertMaterial({
+                material = new THREE.MeshPhongMaterial({
                     envMap: scene.background,
                     combine: THREE.MixOperation,
                     reflectivity: 1
@@ -428,25 +458,31 @@ function SetSurface(mat) {
                 mesh.material.color.set(value);
             });
         }
-        if (mat == 5 && !bounces && !ior) {
+        if (mat == 5 && !bounces && !ior && !objDiamondColor) {
             var effectController = {
                 bounces: 3.0,
                 ior: 2.4,
-                correctMips: true,
-                chromaticAberration: true,
-                aberrationStrength: 0.01
+                color: '#ffffff'
             };
+
+            objDiamondColor = objectFolder.addColor(effectController, 'color').name("Color").onChange((value) => {
+                effectController.color = value;  // Keep the value as a hex string
+                mesh.material.uniforms.color.value = new THREE.Color(value);
+            });
 
             bounces = objectFolder.add(effectController, "bounces", 1.0, 10.0, 1.0).name("Bounces").onChange((value) => {
                 effectController.bounces = value;
                 mesh.material.uniforms.bounces.value = effectController.bounces;
             });
+
             ior = objectFolder.add(effectController, "ior", 1.0, 5.0, 0.01).name("IOR").onChange((value) => {
                 effectController.ior = value;
                 mesh.material.uniforms.ior.value = effectController.ior;
             });
+
             objectFolder.open();
         }
+
         else {
             if (bounces) {
                 objectFolder.remove(bounces)
@@ -455,6 +491,10 @@ function SetSurface(mat) {
             if (ior) {
                 objectFolder.remove(ior)
                 ior = null;
+            }
+            if (objDiamondColor) {
+                objectFolder.remove(objDiamondColor);
+                objDiamondColor = null;
             }
         }
         mesh.castShadow = true; // Enable shadow casting
@@ -606,7 +646,6 @@ function setLight(LightID) {
             const dlSettings = { visible: true, color: light.color.getHex() };
             dlFolder = gui.addFolder('directional light');
             dlFolder.add(light, 'intensity', 0, 5, 0.1);
-            dlFolder.add(light.position, 'y', 1, 100, 5);
             dlFolder.add(light, 'castShadow');
             dlFolder.add(light.position, 'x', -100, 100, 5);
             dlFolder.add(light.position, 'y', -10, 100, 5);
