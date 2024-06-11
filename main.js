@@ -432,7 +432,7 @@ function SetSurface(mat) {
                 CloneMesh(dummy_mesh);
                 break;
             case 4: //Image
-                material = new THREE.MeshPhongMaterial({ map: texture, });
+                material = new THREE.MeshBasicMaterial({ map: texture, });
                 material.toneMapped = false;
                 mesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
