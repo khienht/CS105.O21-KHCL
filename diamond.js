@@ -119,6 +119,5 @@ export function makeDiamond(geo, environment, camera, WIDTH, HEIGHT, {
     // Enable shadows
     diamond.castShadow = true;
     diamond.receiveShadow = true;
-
     return diamond;
 }

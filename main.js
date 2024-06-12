@@ -14,7 +14,7 @@ import { makeDiamond } from './diamond.js';
 import { init_models, remove_models } from './models.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-export var scene, camera, renderer, mesh, currentMeshName, currentMeshMaterial, texture, controls, light_env, dark_env, gui;
+export var scene, camera, renderer, mesh, currentMeshMaterial, texture, controls, light_env, dark_env, gui;
 var planeGeo, planeMat;
 var cubeRenderTarget, cubeCamera;
 var transControls;
@@ -22,9 +22,10 @@ var LightSwitch = false, objcolorflag = false;
 let translateActive = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder, objectFolder;
 var bounces, ior, objColor, objDiamondColor;
-var environment;
+var groupObject = new THREE.Group();
+var groupModel = new THREE.Group();
 
-var transControls, color_bkgr, color_mat = 0xffffff;;
+var transControls = 0xffffff;;
 var material;
 // Geometry
 var BoxG = new THREE.BoxGeometry(30, 30, 30, 40, 40, 40);
@@ -37,6 +38,10 @@ var diamondGeo;
 
 var obj_material;
 var WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
+const mouse = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+let hovered = {}
+var currentMesh = null;
 init();
 async function init() {
     scene = new THREE.Scene();
@@ -82,7 +87,6 @@ async function init() {
     transControls.addEventListener("dragging-changed", (event) => {
         controls.enabled = !event.value;
     });
-    // transControls.addEventListener('change', render);
 
     //GUI control
     {
@@ -115,7 +119,6 @@ async function init() {
     // Init plane for showing shadow
     planeGeo = new THREE.PlaneGeometry(size, size);
     planeMat = new THREE.MeshPhongMaterial({
-        // color: "#15151e",
         side: THREE.DoubleSide,
     });
     {
@@ -124,9 +127,9 @@ async function init() {
         meshPlane.rotation.x = -Math.PI / 2;
         meshPlane.toneMapped = false;
     }
-    // gridHelper.add(meshPlane);
     setupPostProcessing();
     renderer.setAnimationLoop(render);
+    scene.add(groupObject);
 }
 function render() {
     cubeCamera.update(renderer, scene);
@@ -139,7 +142,44 @@ function onWindowResize() {
 
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    WIDTH = window.innerWidth;
+    HEIGHT = window.innerHeight;
 }
+window.addEventListener('pointermove', (e) => {
+    mouse.set((e.clientX / WIDTH) * 2 - 1, -(e.clientY / HEIGHT) * 2 + 1);
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(groupObject.children, true);
+
+    // If a previously hovered item is not among the hits we must call onPointerOut
+    Object.keys(hovered).forEach((key) => {
+        const hit = intersects.find((hit) => hit.object.uuid === key);
+        if (hit === undefined) {
+            const hoveredItem = hovered[key];
+            if (hoveredItem.object.onPointerOut) hoveredItem.object.onPointerOut(hoveredItem);
+            delete hovered[key];
+        }
+    });
+
+    intersects.forEach((hit) => {
+        // If a hit has not been flagged as hovered we must call onPointerOver
+        if (!hovered[hit.object.uuid]) {
+            hovered[hit.object.uuid] = hit;
+            if (hit.object.onPointerOver) hit.object.onPointerOver(hit);
+        }
+        // Call onPointerMove
+        if (hit.object.onPointerMove) hit.object.onPointerMove(hit);
+    });
+});
+
+window.addEventListener('click', (e) => {
+    mouse.set((e.clientX / WIDTH) * 2 - 1, -(e.clientY / HEIGHT) * 2 + 1);
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(groupObject.children, true);
+
+    if (intersects.length > 0) {
+        AddGui_Transform(intersects[0].object)
+    }
+});
 //post processing 
 function setupPostProcessing() {
     const defaultTexture = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
@@ -197,30 +237,6 @@ function getHeart() {
     heartShape.bezierCurveTo(x + 7, y, x + 5, y + 5, x + 5, y + 5);
     return heartShape;
 }
-function create_background_point() {
-    const vertices = [];
-    const num_points = 30000;
-    for (let i = 0; i < num_points; i++) {
-        const x = THREE.MathUtils.randFloatSpread(2000);
-        const y = THREE.MathUtils.randFloatSpread(2000);
-        const z = THREE.MathUtils.randFloatSpread(2000);
-
-        vertices.push(x, y, z);
-    }
-
-    const background_geometry = new THREE.BufferGeometry();
-    background_geometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(vertices, 3)
-    );
-
-    const background_material = new THREE.PointsMaterial({ color: 0x888888 });
-    const background_points = new THREE.Points(
-        background_geometry,
-        background_material
-    );
-    return background_points;
-}
 
 let currentEnvironment = null; // Biến lưu trữ texture nền hiện tại
 //dark light mode
@@ -260,9 +276,6 @@ async function ChangeBackGround(id) {
         // Add the exposure control if it doesn't exist
         gui.add(renderer, 'toneMappingExposure', 0, (id == 1) ? 0.1 : 2).name('Exposure');
     }
-
-    // Uncomment if you need to update cubeCamera texture
-    // cubeCamera.texture = currentEnvironment.texture;
 }
 
 window.ChangeBackGround = ChangeBackGround;
@@ -277,35 +290,27 @@ async function addMesh(id) {
         toggle_model = !toggle_model;
         remove_models();
     }
-    // Remove the existing mesh
-    if (mesh) {
-        scene.remove(mesh);
-    }
+    var mesh;
+    var temp_material = obj_material.clone();
     // Switch case to create new mesh based on id
     switch (id) {
         case 1:
-            mesh = new THREE.Mesh(BoxG, obj_material);
-            currentMeshName = 'box';
+            mesh = new THREE.Mesh(BoxG, temp_material);
             break;
         case 2:
-            mesh = new THREE.Mesh(SphereG, obj_material);
-            currentMeshName = 'sphere';
+            mesh = new THREE.Mesh(SphereG, temp_material);
             break;
         case 3:
-            mesh = new THREE.Mesh(ConeG, obj_material);
-            currentMeshName = 'cone';
+            mesh = new THREE.Mesh(ConeG, temp_material);
             break;
         case 4:
-            mesh = new THREE.Mesh(CylinderG, obj_material);
-            currentMeshName = 'cylinder';
+            mesh = new THREE.Mesh(CylinderG, temp_material);
             break;
         case 5:
-            mesh = new THREE.Mesh(TorusG, obj_material);
-            currentMeshName = 'torus';
+            mesh = new THREE.Mesh(TorusG, temp_material);
             break;
         case 6:
-            mesh = new THREE.Mesh(teapotGeo, obj_material);
-            currentMeshName = 'teapot';
+            mesh = new THREE.Mesh(teapotGeo, temp_material);
             break;
         case 7: {
             const extrudeSettings = {
@@ -318,49 +323,111 @@ async function addMesh(id) {
             };
             const heartShape = getHeart();
             const heart = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
-            mesh = new THREE.Mesh(heart, obj_material);
-            currentMeshName = 'heart';
+            mesh = new THREE.Mesh(heart, temp_material);
             break;
         }
         case 8:
-            mesh = new THREE.Mesh(diamondGeo, obj_material);
-            currentMeshName = 'diamond';
+            mesh = new THREE.Mesh(diamondGeo, temp_material);
             break;
     }
-    // // Add color GUI if it hasn't been added already
-    // if (!objcolorflag) {
-    //     objColor = { color: mesh.material.color.getHex() };
-    //     objColorGUI = gui.addColor(objColor, 'color').name('Object Color');
-    //     objColorGUI.onChange((value) => {
-    //         mesh.material.color.setHex(value);
-    //     });
-
-    //     objcolorflag = true;
-    // }
-    // Add object folder
-    // Initialize objectFolder if it hasn't been created
-    if (!objcolorflag) {
-        objectFolder = gui.addFolder("Objects");
-        // Add a color picker to the folder
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    // Add mesh to the scene
+    currentMesh = mesh;
+    groupObject.add(mesh)
+    AddGui_Transform(mesh)
+}
+window.addMesh = addMesh;
+function checkAndRemoveFolder(gui, folderName) {
+    if (gui.__folders.hasOwnProperty(folderName))
+        gui.removeFolder(gui.__folders[folderName]);
+}
+function AddGui_Transform(mesh) {
+    transform(mesh)
+    transControls.mode = 'translate'
+    transControls.visible = true;
+    checkAndRemoveFolder(gui, "Objects");
+    objectFolder = null;
+    objColor = null;
+    objectFolder = gui.addFolder("Objects");
+    objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
+        mesh.material.color.set(value);
+    });
+    objectFolder.add({
+        Delete: function () {
+            groupObject.remove(mesh)
+            gui.removeFolder(objectFolder);
+            transControls.visible = false;
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material) {
+                if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach(function (material) {
+                        material.dispose();
+                    });
+                } else {
+                    mesh.material.dispose();
+                }
+            }
+            currentMesh = null;
+        }
+    }, 'Delete').name('Delete Object');
+    currentMesh = mesh;
+}
+function AddGui_Transform_Surface(mesh, type) {
+    checkAndRemoveFolder(gui, "Objects");
+    objectFolder = null;
+    objColor = null;
+    bounces = null;
+    ior = null;
+    objDiamondColor = null;
+    objectFolder = gui.addFolder("Objects");
+    if (type == 'reflection' || type == 'refraction' || type == 'image') {
+    }
+    else if (type == 'point' || type == "line" || type == "solid") {
         objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
             mesh.material.color.set(value);
         });
-        objcolorflag = true;
     }
+    else if (type == "diamond") {
+        var effectController = {
+            bounces: 3.0,
+            ior: 2.4,
+            color: '#ffffff'
+        };
+        objDiamondColor = objectFolder.addColor(effectController, 'color').name("Color").onChange((value) => {
+            effectController.color = value;  // Keep the value as a hex string
+            mesh.material.uniforms.color.value = new THREE.Color(value);
+        });
 
-    // Set mesh properties
-    mesh.name = "mesh1";
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+        bounces = objectFolder.add(effectController, "bounces", 1.0, 10.0, 1.0).name("Bounces").onChange((value) => {
+            effectController.bounces = value;
+            mesh.material.uniforms.bounces.value = effectController.bounces;
+        });
 
-    // Add mesh to the scene
-    scene.add(mesh);
-
-    // Apply transformation and render the scene
-    transform(mesh);
-    // render();
+        ior = objectFolder.add(effectController, "ior", 1.0, 5.0, 0.01).name("IOR").onChange((value) => {
+            effectController.ior = value;
+            mesh.material.uniforms.ior.value = effectController.ior;
+        });
+    }
+    objectFolder.add({
+        Delete: function () {
+            groupObject.remove(mesh)
+            gui.removeFolder(objectFolder);
+            transControls.visible = false;
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material) {
+                if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach(function (material) {
+                        material.dispose();
+                    });
+                } else {
+                    mesh.material.dispose();
+                }
+            }
+            currentMesh = null;
+        }
+    }, 'Delete').name('Delete Object');
 }
-window.addMesh = addMesh;
 let toggle_model = false;
 function toggleModel() {
     toggle_model = !toggle_model;
@@ -379,67 +446,78 @@ function toggleModel() {
 window.toggleModel = toggleModel;
 
 function removeGeometry() {
-    if (scene.getObjectById(mesh.id) !== undefined && transControls.object && objcolorflag == true) {
-        scene.remove(mesh);
+    scene.remove(groupObject)
+    if (!groupObject.children.length) {
         gui.removeFolder(objectFolder);
         RemoveAllAnimation();
-        // Dispose geometry and material to free up resources
-        if (mesh.geometry) mesh.geometry.dispose();
-        if (mesh.material) mesh.material.dispose();
-
-        console.log("Mesh đã được xóa khỏi scene.");
-    } else {
-        console.log("Mesh không tồn tại trong scene.");
     }
-    objcolorflag = false;
+    groupObject.children.forEach(function (mesh) {
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(function (material) {
+                    material.dispose();
+                });
+            } else {
+                mesh.material.dispose();
+            }
+        }
+    });
+    groupObject = null;
 }
 window.removeGeometry = removeGeometry;
 
 function CloneMesh(dummy_mesh) {
-    mesh.name = dummy_mesh.name;
-    mesh.position.set(dummy_mesh.position.x, dummy_mesh.position.y, dummy_mesh.position.z);
-    mesh.rotation.set(dummy_mesh.rotation.x, dummy_mesh.rotation.y, dummy_mesh.rotation.z);
-    mesh.scale.set(dummy_mesh.scale.x, dummy_mesh.scale.y, dummy_mesh.scale.z);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-
-    scene.add(mesh);
-    transform(mesh);
+    currentMesh.position.set(dummy_mesh.position.x, dummy_mesh.position.y, dummy_mesh.position.z);
+    currentMesh.rotation.set(dummy_mesh.rotation.x, dummy_mesh.rotation.y, dummy_mesh.rotation.z);
+    currentMesh.scale.set(dummy_mesh.scale.x, dummy_mesh.scale.y, dummy_mesh.scale.z);
+    currentMesh.castShadow = true;
+    currentMesh.receiveShadow = true;
+    scene.add(currentMesh);
+    groupObject.add(currentMesh)
 }
 
 // change surface
 function SetSurface(mat) {
-    if (mesh) {
-        const dummy_mesh = mesh.clone();
-        scene.remove(mesh);
+    if (currentMesh) {
+        const dummy_mesh = currentMesh.clone();
+        scene.remove(currentMesh);
+        groupObject.remove(currentMesh)
         switch (mat) {
             case 1: //Point
-                material = new THREE.PointsMaterial({ color: mesh.material.color, size: 0.8 });
+                material = new THREE.PointsMaterial({ color: currentMesh.material.color, size: 0.8 });
                 material.toneMapped = false;
-                mesh = new THREE.Points(dummy_mesh.geometry, material);
+                currentMesh = new THREE.Points(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'point')
                 break;
             case 2: //Line
-                material = new THREE.MeshStandardMaterial({ color: mesh.material.color, wireframe: true });
+                material = new THREE.MeshStandardMaterial({ color: currentMesh.material.color, wireframe: true });
                 material.toneMapped = false;
-                mesh = new THREE.Line(dummy_mesh.geometry, material);
+                currentMesh = new THREE.Line(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'line')
                 break;
             case 3: //Solid
-                material = new THREE.MeshPhongMaterial({ color: mesh.material.color });
+                material = new THREE.MeshStandardMaterial({ color: currentMesh.material.color });
                 material.toneMapped = false;
-                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                currentMesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'solid')
                 break;
             case 4: //Image
-                material = new THREE.MeshBasicMaterial({ map: texture, });
+                material = new THREE.MeshStandardMaterial({ map: texture });
                 material.toneMapped = false;
-                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                currentMesh.material = material;
+                currentMesh.needsUpdate = true;
+                currentMesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'image')
                 break;
             case 5: // Diamond ~ Required specific shape
-                mesh = makeDiamond(dummy_mesh.geometry, scene.background, camera, WIDTH, HEIGHT);
+                currentMesh = makeDiamond(dummy_mesh.geometry, scene.background, camera, WIDTH, HEIGHT);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'diamond')
                 break;
             case 6: // Reflection 
                 material = new THREE.MeshPhongMaterial({
@@ -447,8 +525,9 @@ function SetSurface(mat) {
                     combine: THREE.MixOperation,
                     reflectivity: 1
                 })
-                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                currentMesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'reflection')
                 break;
             case 7: // Refraction 
                 material = new THREE.MeshPhysicalMaterial({
@@ -459,71 +538,17 @@ function SetSurface(mat) {
                     thickness: 1.0,
                     envMap: scene.background,  // Assuming envMap is defined as above
                 });
-                mesh = new THREE.Mesh(dummy_mesh.geometry, material);
+                currentMesh = new THREE.Mesh(dummy_mesh.geometry, material);
                 CloneMesh(dummy_mesh);
+                AddGui_Transform_Surface(currentMesh, 'refraction')
                 break;
-
         }
-        if (mat == 4 || mat == 5 || mat == 6 || mat == 7) {
-            if (objColor)
-                objectFolder.remove(objColor);
-            objColor = null;
-        }
-        else if (!objColor) {
-            objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
-                mesh.material.color.set(value);
-            });
-        }
-        if (mat == 5 && !bounces && !ior && !objDiamondColor) {
-            var effectController = {
-                bounces: 3.0,
-                ior: 2.4,
-                color: '#ffffff'
-            };
-
-            objDiamondColor = objectFolder.addColor(effectController, 'color').name("Color").onChange((value) => {
-                effectController.color = value;  // Keep the value as a hex string
-                mesh.material.uniforms.color.value = new THREE.Color(value);
-            });
-
-            bounces = objectFolder.add(effectController, "bounces", 1.0, 10.0, 1.0).name("Bounces").onChange((value) => {
-                effectController.bounces = value;
-                mesh.material.uniforms.bounces.value = effectController.bounces;
-            });
-
-            ior = objectFolder.add(effectController, "ior", 1.0, 5.0, 0.01).name("IOR").onChange((value) => {
-                effectController.ior = value;
-                mesh.material.uniforms.ior.value = effectController.ior;
-            });
-
-            objectFolder.open();
-        }
-
-        else {
-            if (bounces) {
-                objectFolder.remove(bounces)
-                bounces = null;
-            }
-            if (ior) {
-                objectFolder.remove(ior)
-                ior = null;
-            }
-            if (objDiamondColor) {
-                objectFolder.remove(objDiamondColor);
-                objDiamondColor = null;
-            }
-        }
-        mesh.castShadow = true; // Enable shadow casting
-        mesh.receiveShadow = true; // Enable shadow receiving
-        scene.add(mesh);
-        // render();
     }
 }
 window.SetSurface = SetSurface
 
 function ImgTexture(url) {
-    mesh = scene.getObjectByName("mesh1");
-    if (mesh) {
+    if (currentMesh) {
         texture = new THREE.TextureLoader().load(url);
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         SetSurface(4);
@@ -560,8 +585,6 @@ function Scale() {
     }
 }
 window.Scale = Scale;
-
-
 
 export function transform(mesh) {
     transControls.attach(mesh);
@@ -775,7 +798,6 @@ function setLight(LightID) {
 }
 window.setLight = setLight;
 
-
 //animation
 let time = Date.now();
 let id_animation;
@@ -790,9 +812,8 @@ function startAnimation(animationId) {
     cancelAnimationFrame(id_animation);
 
     // Reset mesh properties if needed
-    mesh.rotation.set(0, 0, 0);
-    mesh.scale.set(1, 1, 1);
-    mesh.position.set(0, 0, 0);
+    currentMesh.rotation.set(0, 0, 0);
+    currentMesh.scale.set(1, 1, 1);
     alpha = 0; // Reset alpha for Animation3
 
     function animate() {
@@ -803,25 +824,25 @@ function startAnimation(animationId) {
         switch (animationId) {
             case 1:
                 // Animation 1
-                mesh.rotation.x += delta_time * 0.0005;
-                mesh.rotation.y += delta_time * 0.002;
-                mesh.rotation.z += delta_time * 0.001;
+                currentMesh.rotation.x += delta_time * 0.0005;
+                currentMesh.rotation.y += delta_time * 0.002;
+                currentMesh.rotation.z += delta_time * 0.001;
                 break;
             case 2:
                 // Animation 2
-                mesh.rotation.y += rotationSpeed;
+                currentMesh.rotation.y += rotationSpeed;
 
                 if (isScalingUp) {
-                    mesh.scale.x += scaleSpeed;
-                    mesh.scale.y += scaleSpeed;
-                    mesh.scale.z += scaleSpeed;
+                    currentMesh.scale.x += scaleSpeed;
+                    currentMesh.scale.y += scaleSpeed;
+                    currentMesh.scale.z += scaleSpeed;
                 } else {
-                    mesh.scale.x -= scaleSpeed;
-                    mesh.scale.y -= scaleSpeed;
-                    mesh.scale.z -= scaleSpeed;
+                    currentMesh.scale.x -= scaleSpeed;
+                    currentMesh.scale.y -= scaleSpeed;
+                    currentMesh.scale.z -= scaleSpeed;
                 }
                 // Kiểm tra nếu đối tượng đạt tới giới hạn thu/phóng thì đảo chiều
-                if (mesh.scale.x >= 2 || mesh.scale.x <= 0.5) {
+                if (currentMesh.scale.x >= 2 || currentMesh.scale.x <= 0.5) {
                     isScalingUp = !isScalingUp;
                 }
                 break;
@@ -830,11 +851,11 @@ function startAnimation(animationId) {
                 alpha += Math.PI * 0.005;
                 if (alpha >= Math.PI * 2) alpha = 0;// Đảm bảo alpha không vượt quá 2π
 
-                mesh.position.x = Math.sin(alpha) * 10;
-                mesh.position.z = Math.cos(alpha) * 10;
+                currentMesh.position.x = Math.sin(alpha) * 10;
+                currentMesh.position.z = Math.cos(alpha) * 10;
 
-                mesh.rotation.y += rotationSpeed * 2;
-                mesh.rotation.z += rotationSpeed;
+                currentMesh.rotation.y += rotationSpeed * 2;
+                currentMesh.rotation.z += rotationSpeed;
                 break;
             default:
                 console.error("Invalid animation ID");
@@ -848,8 +869,8 @@ function startAnimation(animationId) {
 window.startAnimation = startAnimation;
 function RemoveAllAnimation() {
     cancelAnimationFrame(id_animation);
-    mesh.rotation.set(0, 0, 0);
-    mesh.scale.set(1, 1, 1);
-    mesh.position.set(0, 0, 0);
+    currentMesh.rotation.set(0, 0, 0);
+    currentMesh.scale.set(1, 1, 1);
+    currentMesh.position.set(0, 0, 0);
 }
 window.RemoveAllAnimation = RemoveAllAnimation;
