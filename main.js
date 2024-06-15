@@ -14,7 +14,7 @@ import { makeDiamond } from './diamond.js';
 import { init_models, remove_models } from './models.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-export var scene, camera, renderer, mesh, currentMeshMaterial, texture, controls, light_env, dark_env, gui;
+export var scene, camera, renderer, mesh, currentMeshMaterial, texture, controls, light_env, dark_env, gui, currentMesh;
 var planeGeo, planeMat;
 var cubeRenderTarget, cubeCamera;
 var transControls;
@@ -22,8 +22,8 @@ var LightSwitch = false, objcolorflag = false;
 let translateActive = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder, objectFolder;
 var bounces, ior, objColor, objDiamondColor;
-var groupObject = new THREE.Group();
-var groupModel = new THREE.Group();
+export var groupObject = new THREE.Group();
+export var groupModel = new THREE.Group();
 
 var transControls = 0xffffff;;
 var material;
@@ -41,7 +41,6 @@ var WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
 const mouse = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 let hovered = {}
-var currentMesh = null;
 init();
 async function init() {
     scene = new THREE.Scene();
@@ -130,6 +129,7 @@ async function init() {
     setupPostProcessing();
     renderer.setAnimationLoop(render);
     scene.add(groupObject);
+    scene.add(groupModel);
 }
 function render() {
     cubeCamera.update(renderer, scene);
@@ -145,41 +145,22 @@ function onWindowResize() {
     WIDTH = window.innerWidth;
     HEIGHT = window.innerHeight;
 }
-window.addEventListener('pointermove', (e) => {
-    mouse.set((e.clientX / WIDTH) * 2 - 1, -(e.clientY / HEIGHT) * 2 + 1);
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(groupObject.children, true);
-
-    // If a previously hovered item is not among the hits we must call onPointerOut
-    Object.keys(hovered).forEach((key) => {
-        const hit = intersects.find((hit) => hit.object.uuid === key);
-        if (hit === undefined) {
-            const hoveredItem = hovered[key];
-            if (hoveredItem.object.onPointerOut) hoveredItem.object.onPointerOut(hoveredItem);
-            delete hovered[key];
-        }
-    });
-
-    intersects.forEach((hit) => {
-        // If a hit has not been flagged as hovered we must call onPointerOver
-        if (!hovered[hit.object.uuid]) {
-            hovered[hit.object.uuid] = hit;
-            if (hit.object.onPointerOver) hit.object.onPointerOver(hit);
-        }
-        // Call onPointerMove
-        if (hit.object.onPointerMove) hit.object.onPointerMove(hit);
-    });
-});
-
 window.addEventListener('click', (e) => {
-    mouse.set((e.clientX / WIDTH) * 2 - 1, -(e.clientY / HEIGHT) * 2 + 1);
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(groupObject.children, true);
-
-    if (intersects.length > 0) {
-        AddGui_Transform(intersects[0].object)
+    if (groupObject) {
+        mouse.set((e.clientX / WIDTH) * 2 - 1, -(e.clientY / HEIGHT) * 2 + 1);
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(groupObject.children, true);
+        if (intersects.length > 0) {
+            let intersectedObject = intersects[0].object;
+            while (intersectedObject.parent && intersectedObject.parent !== groupObject) {
+                intersectedObject = intersectedObject.parent;
+            }
+            AddGui_Transform(intersectedObject);
+        }
     }
 });
+
+
 //post processing 
 function setupPostProcessing() {
     const defaultTexture = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
@@ -349,28 +330,30 @@ function AddGui_Transform(mesh) {
     checkAndRemoveFolder(gui, "Objects");
     objectFolder = null;
     objColor = null;
-    objectFolder = gui.addFolder("Objects");
-    objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
-        mesh.material.color.set(value);
-    });
-    objectFolder.add({
-        Delete: function () {
-            groupObject.remove(mesh)
-            gui.removeFolder(objectFolder);
-            transControls.visible = false;
-            if (mesh.geometry) mesh.geometry.dispose();
-            if (mesh.material) {
-                if (Array.isArray(mesh.material)) {
-                    mesh.material.forEach(function (material) {
-                        material.dispose();
-                    });
-                } else {
-                    mesh.material.dispose();
+    if (!toggleModel) {
+        objectFolder = gui.addFolder("Objects");
+        objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
+            mesh.material.color.set(value);
+        });
+        objectFolder.add({
+            Delete: function () {
+                groupObject.remove(mesh)
+                gui.removeFolder(objectFolder);
+                transControls.visible = false;
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) {
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach(function (material) {
+                            material.dispose();
+                        });
+                    } else {
+                        mesh.material.dispose();
+                    }
                 }
+                currentMesh = null;
             }
-            currentMesh = null;
-        }
-    }, 'Delete').name('Delete Object');
+        }, 'Delete').name('Delete Object');
+    }
     currentMesh = mesh;
 }
 function AddGui_Transform_Surface(mesh, type) {
@@ -432,7 +415,7 @@ let toggle_model = false;
 function toggleModel() {
     toggle_model = !toggle_model;
     if (objectFolder) {
-        gui.removeFolder(objectFolder)
+        gui.removeFolder(objectFolder);
         objectFolder = null;
     }
     if (toggle_model) {
@@ -441,30 +424,23 @@ function toggleModel() {
     }
     else {
         remove_models();
+        removeGeometry();
     }
 }
 window.toggleModel = toggleModel;
 
 function removeGeometry() {
-    scene.remove(groupObject)
-    if (!groupObject.children.length) {
+    while (groupObject.children.length > 0) {
+        groupObject.remove(groupObject.children[0]);
+    }
+
+    if (groupObject.children.length === 0) {
         gui.removeFolder(objectFolder);
         RemoveAllAnimation();
     }
-    groupObject.children.forEach(function (mesh) {
-        if (mesh.geometry) mesh.geometry.dispose();
-        if (mesh.material) {
-            if (Array.isArray(mesh.material)) {
-                mesh.material.forEach(function (material) {
-                    material.dispose();
-                });
-            } else {
-                mesh.material.dispose();
-            }
-        }
-    });
-    groupObject = null;
+    transControls.visible = false;
 }
+
 window.removeGeometry = removeGeometry;
 
 function CloneMesh(dummy_mesh) {

@@ -6,7 +6,7 @@ import { LDrawUtils } from 'three/addons/utils/LDrawUtils.js';
 let container, progressBarDiv;
 
 let guiData;
-import { camera, scene, renderer, controls, gui } from './main.js';
+import { camera, scene, renderer, controls, gui, groupModel, groupObject } from './main.js';
 import { transform } from './main.js';
 let mesh, folder_model;
 const ldrawPath = 'models/ldraw/officialLibrary/';
@@ -56,10 +56,8 @@ export function init_models() {
     reloadObject(true);
 }
 export function remove_models() {
-    scene.remove(mesh);
     gui.removeFolder(folder_model)
 }
-
 function updateObjectsVisibility() {
     mesh.traverse(c => {
 
@@ -153,9 +151,7 @@ function reloadObject(resetCamera) {
             mesh.scale.set(0.5, 0.5, 0.5);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
-
-            scene.add(mesh);
-            transform(mesh);
+            groupObject.add(mesh);
 
             guiData.buildingStep = mesh.userData.numBuildingSteps - 1;
 
