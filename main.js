@@ -13,11 +13,13 @@ import { EffectShader } from "./diamond/EffectShader.js";
 import { makeDiamond } from './diamond.js';
 import { init_models, remove_models } from './models.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { click_model } from './models.js';
 
-export var scene, camera, renderer, mesh, currentMeshMaterial, texture, controls, light_env, dark_env, gui, currentMesh;
+export var scene, camera, renderer, mesh, currentMeshMaterial, texture, controls, light_env, dark_env, gui;
+export var currentMesh = null;
 var planeGeo, planeMat;
 var cubeRenderTarget, cubeCamera;
-var transControls;
+export var transControls;
 var LightSwitch = false, objcolorflag = false;
 let translateActive = false;
 var meshPlane, light, helper, plFolder, abFolder, dlFolder, slFolder, hemisphereFolder, objectFolder;
@@ -324,13 +326,15 @@ function checkAndRemoveFolder(gui, folderName) {
         gui.removeFolder(gui.__folders[folderName]);
 }
 function AddGui_Transform(mesh) {
+    if (toggle_model)
+        click_model(mesh)
     transform(mesh)
     transControls.mode = 'translate'
     transControls.visible = true;
     checkAndRemoveFolder(gui, "Objects");
     objectFolder = null;
     objColor = null;
-    if (!toggleModel) {
+    if (!toggle_model) {
         objectFolder = gui.addFolder("Objects");
         objColor = objectFolder.addColor({ color: `#${mesh.material.color.getHexString()}` }, 'color').name("Color").onChange((value) => {
             mesh.material.color.set(value);

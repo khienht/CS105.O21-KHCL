@@ -6,10 +6,14 @@ import { LDrawUtils } from 'three/addons/utils/LDrawUtils.js';
 let container, progressBarDiv;
 
 let guiData;
-import { camera, scene, renderer, controls, gui, groupModel, groupObject } from './main.js';
+import { camera, scene, renderer, controls, gui, groupModel, groupObject, transControls } from './main.js';
 import { transform } from './main.js';
 let mesh, folder_model;
+export let currentModel;
 const ldrawPath = 'models/ldraw/officialLibrary/';
+var rotation_x = null;
+var scale = null;
+var position = null;
 
 const modelFileList = {
     'Car': 'models/car.ldr_Packed.mpd',
@@ -29,7 +33,11 @@ const modelFileList = {
     'X-Wing': 'models/7140-1-X-wingFighter.mpd_Packed.mpd',
     'AT-ST': 'models/10174-1-ImperialAT-ST-UCS.mpd_Packed.mpd'
 };
-
+export function click_model(mesh) {
+    console.log(mesh)
+    currentModel = mesh;
+    createGUI();
+}
 export function init_models() {
     folder_model = gui.addFolder("Models")
     guiData = {
@@ -59,7 +67,7 @@ export function remove_models() {
     gui.removeFolder(folder_model)
 }
 function updateObjectsVisibility() {
-    mesh.traverse(c => {
+    currentModel.traverse(c => {
 
         if (c.isLineSegments) {
 
@@ -83,10 +91,11 @@ function updateObjectsVisibility() {
     });
 
 }
-
-function reloadObject(resetCamera) {
-    if (mesh) {
-        scene.remove(mesh);
+var temp_mesh = null;
+function reloadObject(resetCamera, isRemove = false) {
+    if (currentModel && isRemove) {
+        temp_mesh = currentModel.clone();
+        groupObject.remove(currentModel);
     }
     updateProgressBar(0);
     showProgressBar();
@@ -98,11 +107,11 @@ function reloadObject(resetCamera) {
         .setPath(ldrawPath)
         .load(guiData.modelFileName, function (group2) {
 
-            if (mesh) {
-                scene.remove(mesh);
+            if (currentModel && isRemove) {
+                groupObject.remove(currentModel);
             }
 
-            mesh = group2;
+            currentModel = group2;
 
             // demonstrate how to use convert to flat colors to better mimic the lego instructions look
             if (guiData.flatColors) {
@@ -123,37 +132,40 @@ function reloadObject(resetCamera) {
 
                 }
 
-                mesh.traverse(c => {
+                currentModel.traverse(c => {
 
                     if (c.isMesh) {
-
                         if (Array.isArray(c.material)) {
-
                             c.material = c.material.map(convertMaterial);
-
                         } else {
-
                             c.material = convertMaterial(c.material);
-
                         }
-
                     }
 
                 });
 
             }
-
             // Merge model geometries by material
-            if (guiData.mergeModel) mesh = LDrawUtils.mergeObject(mesh);
+            if (guiData.mergeModel) currentModel = LDrawUtils.mergeObject(currentModel);
 
             // Convert from LDraw coordinates: rotate 180 degrees around OX
-            mesh.rotation.x = Math.PI;
-            mesh.scale.set(0.5, 0.5, 0.5);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            groupObject.add(mesh);
+            if (isRemove) {
+                currentModel.rotation.x = temp_mesh.rotation.x; // Copy the rotation around the x-axis
+                // Copy the position
+                currentModel.position.copy(temp_mesh.position);
 
-            guiData.buildingStep = mesh.userData.numBuildingSteps - 1;
+                // Copy the scale
+                currentModel.scale.copy(temp_mesh.scale);
+            }
+            else {
+                currentModel.rotation.x = Math.PI;
+                currentModel.scale.set(0.5, 0.5, 0.5);
+            }
+            currentModel.castShadow = true;
+            currentModel.receiveShadow = true;
+            groupObject.add(currentModel);
+
+            guiData.buildingStep = currentModel.userData.numBuildingSteps - 1;
 
             updateObjectsVisibility();
 
@@ -181,13 +193,13 @@ function createGUI() {
 
     folder_model.add(guiData, 'flatColors').name('Flat Colors').onChange(function () {
 
-        reloadObject(false);
+        reloadObject(false, true);
 
     });
 
-    if (mesh.userData.numBuildingSteps > 1) {
+    if (currentModel.userData.numBuildingSteps > 1) {
 
-        folder_model.add(guiData, 'buildingStep', 0, mesh.userData.numBuildingSteps - 1).step(1).name('Building step').onChange(updateObjectsVisibility);
+        folder_model.add(guiData, 'buildingStep', 0, currentModel.userData.numBuildingSteps - 1).step(1).name('Building step').onChange(updateObjectsVisibility);
 
     } else {
 
@@ -197,12 +209,30 @@ function createGUI() {
 
     folder_model.add(guiData, 'smoothNormals').name('Smooth Normals').onChange(function changeNormals() {
 
-        reloadObject(false);
+        reloadObject(false, true);
 
     });
 
     folder_model.add(guiData, 'displayLines').name('Display Lines').onChange(updateObjectsVisibility);
     folder_model.add(guiData, 'conditionalLines').name('Conditional Lines').onChange(updateObjectsVisibility);
+    folder_model.add({
+        Delete: function () {
+            groupObject.remove(currentModel)
+            gui.removeFolder(objectFolder);
+            transControls.visible = false;
+            if (currentModel.geometry) currentModel.geometry.dispose();
+            if (currentModel.material) {
+                if (Array.isArray(currentModel.material)) {
+                    currentModel.material.forEach(function (material) {
+                        material.dispose();
+                    });
+                } else {
+                    currentModel.material.dispose();
+                }
+            }
+            currentModel = null;
+        }
+    }, 'Delete').name('Delete Object');
 
 }
 
