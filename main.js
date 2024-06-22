@@ -609,9 +609,8 @@ function removeLight() {
         }
     });
 
-    if (translateActive && mesh) {
+    if (translateActive) {
         transControls.detach(); // Đảm bảo tắt chế độ translate
-        transform(mesh); // Chuyển chế độ transform lại cho mesh
         translateActive = false; // Đặt lại biến trạng thái
     }
     LightSwitch = false;
